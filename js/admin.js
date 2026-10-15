@@ -4,7 +4,8 @@
    =================================================================== */
 
 import {
-  ADMIN_PASS,
+  getAdminPasscode,
+  setAdminPasscode,
   getSubmissions,
   clearSubmissions,
   getWebhookUrl,
@@ -23,6 +24,7 @@ export function initAdminDashboard() {
   const printQrBtn = document.getElementById('admin-print-qr');
   const saveWebhookBtn = document.getElementById('admin-save-webhook');
   const qrUrlInput = document.getElementById('admin-qr-url');
+  const changePassBtn = document.getElementById('admin-change-pass-btn');
 
   if (loginForm) {
     loginForm.onsubmit = e => {
@@ -50,8 +52,27 @@ export function initAdminDashboard() {
   if (printQrBtn) printQrBtn.onclick = () => window.print();
   if (saveWebhookBtn) saveWebhookBtn.onclick = handleSaveWebhook;
 
+  if (changePassBtn) {
+    changePassBtn.onclick = handleChangePasscode;
+  }
+
   if (qrUrlInput) {
     qrUrlInput.oninput = updateAdminQRCode;
+  }
+}
+
+function handleChangePasscode() {
+  const current = prompt('Enter your current passcode:');
+  if (current !== getAdminPasscode()) {
+    alert('Current passcode is incorrect.');
+    return;
+  }
+  const newPass = prompt('Enter new private passcode (minimum 6 characters):');
+  if (newPass && newPass.trim().length >= 6) {
+    setAdminPasscode(newPass.trim());
+    alert('Passcode successfully updated! Keep your new passcode safe.');
+  } else if (newPass !== null) {
+    alert('Passcode must be at least 6 characters long.');
   }
 }
 
@@ -63,7 +84,7 @@ export function verifyAdminPasscode() {
 
   if (!passInput) return;
 
-  if (passInput.value.trim() === ADMIN_PASS) {
+  if (passInput.value.trim() === getAdminPasscode()) {
     if (errorMsg) errorMsg.style.display = 'none';
     if (loginCard) loginCard.style.display = 'none';
     if (dashboardCard) dashboardCard.style.display = 'block';
@@ -83,7 +104,7 @@ export function verifyAdminPasscode() {
   } else {
     if (errorMsg) {
       errorMsg.style.display = 'block';
-      errorMsg.textContent = 'Incorrect passcode. Default passcode: mentalhealth2026';
+      errorMsg.textContent = 'Incorrect passcode. Access denied.';
     }
   }
 }

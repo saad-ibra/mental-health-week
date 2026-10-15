@@ -7,7 +7,7 @@ An interactive, accessible web platform built for **Mental Health Week** to fost
 ## 🌐 Live Public Access
 
 * **Public Web Link**: [https://saad-ibra.github.io/mental-health-week/](https://saad-ibra.github.io/mental-health-week/)
-* **Organiser Admin Portal**: [https://saad-ibra.github.io/mental-health-week/admin.html](https://saad-ibra.github.io/mental-health-week/admin.html) *(Passcode: `mentalhealth2026`)*
+* **Organiser Admin Portal**: [https://saad-ibra.github.io/mental-health-week/admin.html](https://saad-ibra.github.io/mental-health-week/admin.html) *(Restricted access)*
 
 ### 📱 Scan to Play on Mobile
 
@@ -31,7 +31,7 @@ Scan this QR code with any smartphone camera to open the activity hub directly:
 * **Celebration & Support Resources**: Displays score breakdown alongside trusted mental health support hotlines (Campus Counseling, Tele-MANAS, Vandrevala Foundation, KIRAN).
 
 ### 2. Organiser Admin Dashboard (`admin.html`)
-* **Passcode Protected**: Secure admin authentication (`mentalhealth2026`).
+* **Passcode Protected**: Secure admin authentication with custom password management.
 * **KPI Metrics**: Real-time counter of total participants, average score, top score, and completion rate.
 * **Champion Spotlight**: Highlights the #1 ranked participant with course and activity breakdown.
 * **Category Leaderboards**: Top scorers in Crossword, Match-Up, and Quiz.

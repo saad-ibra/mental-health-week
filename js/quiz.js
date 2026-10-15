@@ -175,9 +175,15 @@ function onNextQuestionClicked() {
   if (currentQuestionIndex < QUIZ_DATA.length - 1) {
     currentQuestionIndex++;
     renderCurrentQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const wrapper = document.querySelector('.quiz-wrapper');
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   } else {
     // Finished
     finishQuiz();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 

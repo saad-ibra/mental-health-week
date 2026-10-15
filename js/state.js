@@ -4,8 +4,22 @@
 
 export const STORAGE_KEY = 'mhw_submissions_2026';
 export const WEBHOOK_KEY = 'mhw_webhook_url';
-export const ADMIN_PASS = 'mentalhealth2026';
+export const ADMIN_PASS_KEY = 'mhw_admin_passcode';
 export const THEME_KEY = 'mhw_theme_preference';
+
+const DEFAULT_ADMIN_PASS = 'mentalhealth2026';
+
+export function getAdminPasscode() {
+  return localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_ADMIN_PASS;
+}
+
+export function setAdminPasscode(newPass) {
+  if (newPass && newPass.trim()) {
+    localStorage.setItem(ADMIN_PASS_KEY, newPass.trim());
+    return true;
+  }
+  return false;
+}
 
 let currentUser = null;
 

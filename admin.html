@@ -65,7 +65,7 @@
           <label class="form-label" for="admin-pass-input">
             Admin Passcode
           </label>
-          <input type="password" id="admin-pass-input" class="input-control" required placeholder="Default: mentalhealth2026" autocomplete="current-password">
+          <input type="password" id="admin-pass-input" class="input-control" required placeholder="Enter organiser passcode" autocomplete="current-password">
         </div>
 
         <button type="submit" class="btn btn-primary btn-block btn-lg">
@@ -94,6 +94,10 @@
           </div>
 
           <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-ghost" id="admin-change-pass-btn" title="Change your private organiser passcode">
+              <i data-lucide="key-round"></i>
+              <span>Change Passcode</span>
+            </button>
             <button class="btn btn-sm btn-ghost" id="admin-export-csv">
               <i data-lucide="download"></i>
               <span>Export CSV</span>
