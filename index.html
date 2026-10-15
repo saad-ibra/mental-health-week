@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mental Health Week — Mind Matters Activity Hub</title>
+  <meta name="description" content="Engaging interactive mental health activities, crossword puzzles, habit match-ups, and evidence-based wellbeing quizzes.">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/games.css">
+
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="brand-icon-wrapper">
+          <i data-lucide="brain"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Mind Matters Hub</h1>
+          <p>Mental Health Week Activities & Insights</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Active User Badge Area -->
+        <div id="nav-user-area" style="display:none; align-items:center; gap:0.5rem;">
+          <span class="user-pill" id="nav-user-pill">
+            <i data-lucide="user"></i>
+            <span>Participant</span>
+          </span>
+          <button class="btn btn-sm btn-ghost" id="nav-hub-btn" onclick="window.showHub ? window.showHub() : null">
+            <i data-lucide="layout-grid"></i>
+            <span>Hub</span>
+          </button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="theme-btn" id="theme-toggle-btn" aria-label="Toggle theme mode" title="Toggle theme mode">
+          <span id="theme-icon-slot"><i data-lucide="moon"></i></span>
+        </button>
+
+        <!-- Admin Portal Link -->
+        <a href="admin.html" class="btn btn-sm btn-ghost" title="Organiser Admin Portal">
+          <i data-lucide="shield-check"></i>
+          <span>Admin</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="container">
+
+    <!-- VIEW 1: PARTICIPANT REGISTRATION -->
+    <section id="view-register" class="view active">
+      <div class="card card-glass" style="max-width: 540px; margin: 1.5rem auto;">
+        <div class="card-header" style="flex-direction:column; align-items:flex-start; margin-bottom:1rem;">
+          <span class="badge badge-teal">
+            <i data-lucide="sparkles"></i>
+            <span>Interactive Wellbeing Hub</span>
+          </span>
+          <h2 class="card-title" style="font-size:1.5rem; margin-top:0.4rem;">
+            Welcome! Let's Get Started
+          </h2>
+          <p class="card-subtitle">
+            Enter your details below to unlock the Mental Health Week challenges. You can play any or all activities to boost your overall score!
+          </p>
+        </div>
+
+        <form id="participant-reg-form">
+          <div class="form-group">
+            <label class="form-label" for="reg-name">
+              Full Name <span class="required">*</span>
+            </label>
+            <input type="text" id="reg-name" class="input-control" required placeholder="e.g., Priya Sharma" autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-course">
+              Course / Department Name <span class="required">*</span>
+            </label>
+            <input type="text" id="reg-course" class="input-control" required placeholder="e.g., B.Sc. Psychology / Year 2">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reg-contact">
+              Contact Info (Email or Phone)
+            </label>
+            <input type="text" id="reg-contact" class="input-control" placeholder="e.g., priya@example.com / 9876543210" autocomplete="email">
+            <small style="color:var(--text-subtle); font-size:0.78rem; margin-top:0.3rem; display:block;">
+              Used strictly by organizers to notify top scorers.
+            </small>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:0.75rem;">
+            <span>Enter Activity Hub</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 2: PUZZLE & ACTIVITY HUB -->
+    <section id="view-hub" class="view">
+      <div class="card card-glass" style="margin-bottom:1.5rem;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 class="card-title" style="font-size:1.45rem;">
+              <i data-lucide="layout-grid"></i>
+              <span>Choose Your Activity</span>
+            </h2>
+            <p class="card-subtitle">
+              Complete each challenge to unlock insights and collect points toward the campus leaderboard.
+            </p>
+          </div>
+          <div class="score-pill" style="font-size:1.15rem; padding:0.5rem 1.1rem;">
+            <i data-lucide="award"></i>
+            <span>Total Score: <strong id="hub-total-score">0 pts</strong></span>
+          </div>
+        </div>
+
+        <div class="hub-grid">
+          <!-- Activity 1: Crossword -->
+          <div class="puzzle-card" id="hub-card-crossword">
+            <div class="puzzle-card-top">
+              <div class="puzzle-icon-header" style="background:var(--primary-light); color:var(--primary);">
+                <i data-lucide="pencil-line"></i>
+              </div>
+              <span class="badge badge-teal" style="margin-bottom:0.5rem;">Activity 1</span>
+              <h3>Mind Matters Crossword</h3>
+              <p>
+                10 interactive clues spanning stress, empathy, resilience, and balance.
+              </p>
+            </div>
+            <div class="puzzle-card-bottom">
+              <div class="score-pill" id="hub-cw-status">
+                <i data-lucide="award"></i>
+                <span>Not started (Max 1,000 pts)</span>
+              </div>
+              <button class="btn btn-primary btn-block" id="btn-play-crossword">
+                <span>Play Crossword</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity 2: Match-Up -->
+          <div class="puzzle-card" id="hub-card-matchup">
+            <div class="puzzle-card-top">
+              <div class="puzzle-icon-header" style="background:var(--secondary-light); color:var(--secondary);">
+                <i data-lucide="puzzle"></i>
+              </div>
+              <span class="badge badge-indigo" style="margin-bottom:0.5rem;">Activity 2</span>
+              <h3>Mind Matters Match-Up</h3>
+              <p>
+                Pair 8 daily wellbeing habits with scientific insights as swiftly as you can.
+              </p>
+            </div>
+            <div class="puzzle-card-bottom">
+              <div class="score-pill" id="hub-mu-status">
+                <i data-lucide="award"></i>
+                <span>Not started (Max 1,000 pts)</span>
+              </div>
+              <button class="btn btn-primary btn-block" id="btn-play-matchup">
+                <span>Play Match-Up</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity 3: Wellbeing Quiz -->
+          <div class="puzzle-card" id="hub-card-quiz">
+            <div class="puzzle-card-top">
+              <div class="puzzle-icon-header" style="background:var(--accent-light); color:var(--accent);">
+                <i data-lucide="help-circle"></i>
+              </div>
+              <span class="badge badge-amber" style="margin-bottom:0.5rem;">Activity 3</span>
+              <h3>Wellbeing Myth-Buster Quiz</h3>
+              <p>
+                8 essential questions exploring sleep debt, active listening, and stress relief.
+              </p>
+            </div>
+            <div class="puzzle-card-bottom">
+              <div class="score-pill" id="hub-quiz-status">
+                <i data-lucide="award"></i>
+                <span>Not started (Max 1,000 pts)</span>
+              </div>
+              <button class="btn btn-primary btn-block" id="btn-play-quiz">
+                <span>Start Quiz</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border-subtle); padding-top:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+          <div style="color:var(--text-muted); font-size:0.88rem; display:flex; align-items:center; gap:0.4rem;">
+            <i data-lucide="info" style="width:16px; height:16px; color:var(--primary);"></i>
+            <span>You may play activities in any order. Submit your final entry when done.</span>
+          </div>
+          <button class="btn btn-primary btn-lg" id="btn-submit-final">
+            <i data-lucide="check-check"></i>
+            <span>Submit Final Entry</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: CROSSWORD PUZZLE -->
+    <section id="view-crossword" class="view">
+      <div class="card card-glass" style="margin-bottom:1rem;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:0.75rem;">
+          <div>
+            <h2 class="card-title" style="margin-bottom:0.2rem;">
+              <i data-lucide="pencil-line"></i>
+              <span>Mind Matters Crossword</span>
+            </h2>
+            <p class="card-subtitle">
+              Vocabulary clues about mental wellbeing. Tap "Check & Score" to update points anytime.
+            </p>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="cw-exit-btn">
+            <i data-lucide="arrow-left"></i>
+            <span>Return to Hub</span>
+          </button>
+        </div>
+
+        <div class="game-toolbar">
+          <button class="btn btn-sm btn-primary" id="cw-chk">
+            <i data-lucide="check-circle"></i>
+            <span>Check & Score</span>
+          </button>
+          <button class="btn btn-sm btn-ghost" id="cw-hint">
+            <i data-lucide="lightbulb"></i>
+            <span>Hint (-25 pts)</span>
+          </button>
+          <button class="btn btn-sm btn-ghost" id="cw-rev">
+            <i data-lucide="eye"></i>
+            <span>Reveal All</span>
+          </button>
+          <button class="btn btn-sm btn-ghost" id="cw-clr">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Clear Grid</span>
+          </button>
+
+          <div style="margin-left:auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <div class="game-stat-pill">
+              <i data-lucide="clock"></i>
+              <span id="cw-timer">0s</span>
+            </div>
+            <div id="cw-status-msg" style="font-weight:700; font-size:0.9rem;"></div>
+          </div>
+        </div>
+
+        <div class="gridwrap">
+          <div id="grid"></div>
+        </div>
+
+        <div class="cols">
+          <section>
+            <h3 class="clue-heading">
+              <i data-lucide="arrow-right"></i>
+              <span>Across Clues</span>
+            </h3>
+            <div id="across-clues"></div>
+          </section>
+
+          <section>
+            <h3 class="clue-heading">
+              <i data-lucide="arrow-down"></i>
+              <span>Down Clues</span>
+            </h3>
+            <div id="down-clues"></div>
+          </section>
+        </div>
+
+        <div id="cw-insights-box" class="insights-box" hidden>
+          <h3>
+            <i data-lucide="sparkles"></i>
+            <span>Insights Unlocked</span>
+          </h3>
+          <ul id="cw-insights-list" class="insights-list"></ul>
+        </div>
+
+        <div style="margin-top:1.5rem; display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary" id="cw-save-btn">
+            <span>Save & Back to Hub</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: MATCH-UP PUZZLE -->
+    <section id="view-matchup" class="view">
+      <div class="card card-glass" style="margin-bottom:1rem;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:0.75rem;">
+          <div>
+            <h2 class="card-title" style="margin-bottom:0.2rem;">
+              <i data-lucide="puzzle"></i>
+              <span>Mind Matters Match-Up</span>
+            </h2>
+            <p class="card-subtitle">
+              Select an icon tile on the left, then select the matching statement on the right.
+            </p>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="mu-return-btn">
+            <i data-lucide="arrow-left"></i>
+            <span>Return to Hub</span>
+          </button>
+        </div>
+
+        <div class="game-toolbar">
+          <div class="game-stat-pill">
+            <i data-lucide="check-circle-2"></i>
+            <span>Matched: <strong id="mu-matched-count">0</strong>/8</span>
+          </div>
+          <div class="game-stat-pill">
+            <i data-lucide="alert-circle" style="color:var(--danger)"></i>
+            <span>Slips: <strong id="mu-slips-count">0</strong></span>
+          </div>
+          <div class="game-stat-pill">
+            <i data-lucide="clock"></i>
+            <span id="mu-timer">0s</span>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="mu-restart-btn" style="margin-left:auto;">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Restart Game</span>
+          </button>
+        </div>
+
+        <div class="board">
+          <div class="match-col" id="match-left-col"></div>
+          <div class="match-col" id="match-right-col"></div>
+        </div>
+
+        <div id="match-insight" class="match-insight-box">
+          <i data-lucide="info"></i>
+          <span>Pick an icon to begin matching.</span>
+        </div>
+
+        <div id="match-status-msg" style="margin:1rem 0;"></div>
+
+        <div style="margin-top:1.5rem; display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary" id="mu-save-btn">
+            <span>Save & Back to Hub</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: WELLBEING QUIZ -->
+    <section id="view-quiz" class="view">
+      <div class="quiz-wrapper">
+        <div class="quiz-header">
+          <button class="btn btn-sm btn-ghost" id="quiz-return-btn">
+            <i data-lucide="arrow-left"></i>
+            <span>Return to Hub</span>
+          </button>
+          <div class="game-stat-pill">
+            <i data-lucide="clock"></i>
+            <span id="quiz-timer">0s</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="quiz-progress-bar-container">
+          <div class="quiz-progress-fill" id="quiz-progress-fill" style="width: 12%;"></div>
+        </div>
+
+        <div class="quiz-question-card">
+          <div class="flex-between" style="margin-bottom:0.75rem;">
+            <div class="quiz-question-badge" id="quiz-topic-badge">
+              <i data-lucide="zap"></i>
+              <span>Topic</span>
+            </div>
+            <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted);" id="quiz-question-counter">
+              Question 1 of 8
+            </span>
+          </div>
+
+          <h3 class="quiz-question-title" id="quiz-question-text">
+            Loading question...
+          </h3>
+
+          <div class="quiz-options-list" id="quiz-options-container">
+            <!-- Options populated dynamically -->
+          </div>
+
+          <div class="quiz-explanation-box" id="quiz-explanation-box" hidden>
+            <!-- Key scientific takeaway shown after answering -->
+          </div>
+
+          <div class="quiz-nav-row">
+            <button class="btn btn-primary" id="quiz-next-btn" hidden>
+              <span>Next Question</span>
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: CELEBRATION & HELPLINE SCREEN -->
+    <section id="view-thanks" class="view">
+      <div class="card card-glass" style="max-width:620px; margin:2rem auto; text-align:center; padding:2.5rem 2rem;">
+        <div class="winner-icon-box" style="margin: 0 auto 1.25rem;">
+          <i data-lucide="award"></i>
+        </div>
+
+        <h2 style="font-size:1.75rem; font-weight:800; margin-bottom:0.5rem;">
+          Thank You for Participating!
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:1.5rem;">
+          Your responses for <b>Mental Health Week</b> have been successfully recorded. Rankings and awards are being calculated live on the organizer dashboard.
+        </p>
+
+        <div class="card" style="background:var(--bg-secondary); text-align:left; margin-bottom:1.75rem; padding:1.25rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
+            <span style="color:var(--text-muted); font-weight:600;">Participant:</span>
+            <strong id="ty-participant-name">—</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
+            <span style="color:var(--text-muted); font-weight:600;">Course / Dept:</span>
+            <strong id="ty-participant-course">—</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
+            <span style="color:var(--text-muted); font-weight:600;">Total Score:</span>
+            <strong id="ty-participant-score" style="color:var(--primary); font-size:1.15rem;">0 pts</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted); font-weight:600;">Activities:</span>
+            <span id="ty-participant-breakdown" style="font-size:0.88rem; font-weight:500;">—</span>
+          </div>
+        </div>
+
+        <!-- Campus & Crisis Helplines -->
+        <div style="text-align:left; margin-bottom:1.75rem;">
+          <h4 style="font-size:1rem; font-weight:700; color:var(--text-main); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+            <i data-lucide="heart" style="color:var(--danger)"></i>
+            <span>Mental Wellbeing & Support Contacts</span>
+          </h4>
+          <div id="helpline-resources-list" style="display:flex; flex-direction:column; gap:0.6rem;"></div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btn-new-participant">
+          <i data-lucide="user-plus"></i>
+          <span>Start New Session (Next Participant)</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= SITE FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-notice">
+        <i data-lucide="shield-alert"></i>
+        <span>Educational activity only — not a clinical diagnostic tool. Reach out to a health professional or helpline if you or someone you know is in distress.</span>
+      </div>
+      <div class="footer-links">
+        <a href="admin.html" class="footer-link">
+          <i data-lucide="lock"></i>
+          <span>Organiser Admin</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Main Scripts -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+/* ===================================================================
+   DESIGN TOKENS & THEMING — MENTAL HEALTH WEEK
+   Curated palette with Teal/Emerald calming tones and dark/light modes
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  /* Color Palette - Light Mode */
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --surface-card: #FFFFFF;
+  --surface-glass: rgba(255, 255, 255, 0.88);
+  --surface-hover: #F8FAFC;
+  --surface-alt: #E2E8F0;
+
+  /* Brand Accents */
+  --primary: #0D9488;          /* Deep Teal */
+  --primary-hover: #0F766E;
+  --primary-light: #CCFBF1;
+  --primary-glow: rgba(13, 148, 136, 0.25);
+
+  --secondary: #6366F1;        /* Calm Indigo */
+  --secondary-light: #EEF2FF;
+
+  --accent: #F59E0B;           /* Warm Amber for hints/selection */
+  --accent-light: #FEF3C7;
+
+  --success: #10B981;          /* Emerald for correct states */
+  --success-bg: #ECFDF5;
+  --success-border: #A7F3D0;
+
+  --danger: #EF4444;           /* Soft Red for errors */
+  --danger-bg: #FEF2F2;
+  --danger-border: #FECACA;
+
+  /* Typography Colors */
+  --text-main: #0F172A;        /* Slate 900 */
+  --text-muted: #64748B;       /* Slate 500 */
+  --text-subtle: #94A3B8;      /* Slate 400 */
+  --text-inverted: #FFFFFF;
+
+  /* Borders & Dividers */
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --border-focus: #0D9488;
+
+  /* Shadows & Elevations */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  /* Geometry & Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Transitions */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Mode Tokens */
+[data-theme="dark"] {
+  --bg-primary: #0F172A;       /* Slate 900 */
+  --bg-secondary: #0A0F1D;     /* Slate 950 */
+  --surface-card: #1E293B;     /* Slate 800 */
+  --surface-glass: rgba(30, 41, 59, 0.85);
+  --surface-hover: #334155;
+  --surface-alt: #334155;
+
+  --primary: #14B8A6;          /* Teal 500 */
+  --primary-hover: #2DD4BF;
+  --primary-light: rgba(20, 184, 166, 0.15);
+  --primary-glow: rgba(20, 184, 166, 0.35);
+
+  --secondary: #818CF8;
+  --secondary-light: rgba(99, 102, 241, 0.15);
+
+  --accent: #FBBF24;
+  --accent-light: rgba(251, 191, 36, 0.15);
+
+  --success: #34D399;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.35);
+
+  --danger: #F87171;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.35);
+
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --text-inverted: #0F172A;
+
+  --border-subtle: #334155;
+  --border-strong: #475569;
+  --border-focus: #14B8A6;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.7);
+}

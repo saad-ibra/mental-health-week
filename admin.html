@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Organiser Admin Portal — Mental Health Week</title>
+  <meta name="description" content="Organiser administrative dashboard for Mental Health Week activity scores, live leaderboards, and QR codes.">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/games.css">
+
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">
+        <div class="brand-icon-wrapper" style="background:linear-gradient(135deg, var(--secondary), var(--primary));">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Organiser Admin Portal</h1>
+          <p>Mental Health Week Results & Control Hub</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Theme Toggle -->
+        <button class="theme-btn" id="theme-toggle-btn" aria-label="Toggle theme mode" title="Toggle theme mode">
+          <span id="theme-icon-slot"><i data-lucide="moon"></i></span>
+        </button>
+
+        <!-- Back to Participant Hub Link -->
+        <a href="index.html" class="btn btn-sm btn-primary">
+          <i data-lucide="external-link"></i>
+          <span>Participant Hub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="container">
+
+    <!-- ADMIN LOGIN GATE -->
+    <div id="admin-login-card" class="card card-glass" style="max-width:440px; margin:3rem auto; text-align:center;">
+      <div class="winner-icon-box" style="margin: 0 auto 1rem; background:linear-gradient(135deg, var(--secondary), var(--primary));">
+        <i data-lucide="lock"></i>
+      </div>
+      <h2 style="font-size:1.45rem; font-weight:800; margin-bottom:0.4rem;">
+        Organiser Access
+      </h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem;">
+        Enter the organizer passcode to view participant rankings, export CSV data, and generate activity QR codes.
+      </p>
+
+      <form id="admin-login-form">
+        <div class="form-group" style="text-align:left;">
+          <label class="form-label" for="admin-pass-input">
+            Admin Passcode
+          </label>
+          <input type="password" id="admin-pass-input" class="input-control" required placeholder="Default: mentalhealth2026" autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">
+          <i data-lucide="unlock"></i>
+          <span>Unlock Dashboard</span>
+        </button>
+
+        <p id="admin-pass-error" style="color:var(--danger); font-size:0.84rem; font-weight:600; margin-top:0.85rem; display:none;"></p>
+      </form>
+    </div>
+
+    <!-- UNLOCKED ADMIN DASHBOARD -->
+    <div id="admin-dashboard-view" style="display:none;">
+
+      <!-- Dashboard Header Toolbar -->
+      <div class="card card-glass" style="margin-bottom:1.5rem; padding:1.25rem 1.5rem;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 class="card-title" style="font-size:1.4rem;">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Live Results & Activity Hub</span>
+            </h2>
+            <p class="card-subtitle">
+              Real-time participant leaderboard, top scorers, and cloud data controls.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-ghost" id="admin-export-csv">
+              <i data-lucide="download"></i>
+              <span>Export CSV</span>
+            </button>
+            <button class="btn btn-sm btn-ghost" id="admin-print-qr">
+              <i data-lucide="printer"></i>
+              <span>Print Flyer</span>
+            </button>
+            <button class="btn btn-sm btn-danger" id="admin-clear-data">
+              <i data-lucide="trash-2"></i>
+              <span>Clear Data</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Metrics Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon teal">
+            <i data-lucide="users"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value" id="kpi-total-participants">0</div>
+            <div class="stat-label">Total Participants</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon indigo">
+            <i data-lucide="activity"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value" id="kpi-avg-score">0 pts</div>
+            <div class="stat-label">Average Score</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon amber">
+            <i data-lucide="trophy"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value" id="kpi-top-score">0 pts</div>
+            <div class="stat-label">Top Score</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon emerald">
+            <i data-lucide="check-check"></i>
+          </div>
+          <div class="stat-info">
+            <div class="stat-value" id="kpi-completion-rate">0%</div>
+            <div class="stat-label">All-Activities Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Champion Overall Spotlight Banner -->
+      <div id="admin-champion-banner" class="winner-banner" style="display:none;">
+        <div class="winner-icon-box">
+          <i data-lucide="trophy"></i>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <span class="badge badge-amber" style="margin-bottom:0.25rem;">
+            Overall Highest Scorer
+          </span>
+          <h3 id="champ-name" style="font-size:1.45rem; font-weight:800; color:var(--text-main); margin-top:2px;">—</h3>
+          <p id="champ-meta" style="color:var(--text-muted); font-size:0.88rem; margin:0;"></p>
+        </div>
+        <div style="text-align:right;">
+          <div id="champ-score" style="font-size:2rem; font-weight:800; color:var(--primary); line-height:1;">0 pts</div>
+          <small id="champ-breakdown" style="color:var(--text-muted); font-weight:600; font-size:0.8rem; margin-top:0.35rem; display:block;"></small>
+        </div>
+      </div>
+
+      <!-- Category Winners Cards -->
+      <div class="hub-grid" style="margin-top:0; margin-bottom:1.5rem;">
+        <div class="card" style="padding:1.15rem;">
+          <div class="badge badge-teal" style="margin-bottom:0.5rem;">
+            <i data-lucide="pencil-line"></i> Top Crossword Scorer
+          </div>
+          <div id="top-cw-box" style="font-weight:700; font-size:1rem; color:var(--text-main);">No entries yet</div>
+        </div>
+
+        <div class="card" style="padding:1.15rem;">
+          <div class="badge badge-indigo" style="margin-bottom:0.5rem;">
+            <i data-lucide="puzzle"></i> Top Match-Up Scorer
+          </div>
+          <div id="top-mu-box" style="font-weight:700; font-size:1rem; color:var(--text-main);">No entries yet</div>
+        </div>
+
+        <div class="card" style="padding:1.15rem;">
+          <div class="badge badge-amber" style="margin-bottom:0.5rem;">
+            <i data-lucide="help-circle"></i> Top Quiz Scorer
+          </div>
+          <div id="top-quiz-box" style="font-weight:700; font-size:1rem; color:var(--text-main);">No entries yet</div>
+        </div>
+      </div>
+
+      <!-- Full Leaderboard Table Card -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <h3 class="card-title" style="font-size:1.2rem;">
+              <i data-lucide="list-ordered"></i>
+              <span>Participant Submissions (<span id="admin-table-count">0</span>)</span>
+            </h3>
+          </div>
+
+          <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <input type="text" id="admin-search-input" class="input-control" placeholder="Search by name or course..." style="width:240px; padding:0.45rem 0.85rem; font-size:0.88rem;">
+            <select id="admin-course-filter" class="input-control" style="width:200px; padding:0.45rem 0.85rem; font-size:0.88rem;">
+              <option value="ALL">All Departments</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Participant</th>
+                <th>Course / Dept</th>
+                <th>Contact</th>
+                <th>Crossword</th>
+                <th>Match-Up</th>
+                <th>Quiz</th>
+                <th>Total Score</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="admin-leaderboard-body">
+              <tr>
+                <td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">
+                  No submissions recorded yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Activity QR Code Generator -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <h3 class="card-title" style="font-size:1.2rem;">
+          <i data-lucide="qr-code"></i>
+          <span>Activity QR Code for Attendees</span>
+        </h3>
+        <p class="card-subtitle" style="margin-bottom:1.25rem;">
+          Students and staff can scan this QR code on their smartphones to open the activity hub directly.
+        </p>
+
+        <div style="display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; background:var(--bg-secondary); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+          <div style="background:#FFFFFF; padding:10px; border-radius:var(--radius-md); border:1px solid var(--border-subtle); box-shadow:var(--shadow-sm);">
+            <img id="admin-qr-img" alt="Mental Health Week Activity QR Code" width="160" height="160" style="display:block;">
+          </div>
+          <div style="flex:1; min-width:240px;">
+            <div class="form-group" style="margin-bottom:0.75rem;">
+              <label class="form-label" for="admin-qr-url">Public Activity URL</label>
+              <input type="url" id="admin-qr-url" class="input-control" placeholder="https://your-domain.edu/index.html">
+            </div>
+            <button class="btn btn-sm btn-primary" onclick="window.print()">
+              <i data-lucide="printer"></i>
+              <span>Print Classroom / Wall Poster</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Device Cloud Sync (Google Sheets Webhook) -->
+      <div class="card" style="margin-bottom:2rem;">
+        <h3 class="card-title" style="font-size:1.2rem;">
+          <i data-lucide="cloud"></i>
+          <span>Multi-Device Cloud Sync (Google Sheets)</span>
+        </h3>
+        <p class="card-subtitle" style="margin-bottom:1rem;">
+          When participants scan the QR code on their own phones, paste your Google Apps Script Web App URL below so every phone automatically posts its score to your central Google Sheet.
+        </p>
+
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem;">
+          <input type="url" id="admin-webhook-input" class="input-control" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1; min-width:260px;">
+          <button class="btn btn-primary btn-sm" id="admin-save-webhook">
+            <i data-lucide="save"></i>
+            <span>Save & Test Sync</span>
+          </button>
+        </div>
+
+        <details style="font-size:0.88rem; color:var(--text-muted); background:var(--bg-secondary); border-radius:var(--radius-md); padding:0.85rem 1rem; border:1px solid var(--border-subtle);">
+          <summary style="cursor:pointer; font-weight:700; color:var(--primary); display:flex; align-items:center; gap:0.4rem;">
+            <i data-lucide="code" style="width:16px; height:16px;"></i>
+            <span>How to setup Google Sheets sync in 60 seconds (free)</span>
+          </summary>
+          <ol style="margin-top:0.85rem; padding-left:1.25rem; display:flex; flex-direction:column; gap:0.5rem;">
+            <li>Create a Google Sheet and click <b>Extensions → Apps Script</b>.</li>
+            <li>Paste this snippet:
+              <pre style="background:var(--surface-card); padding:0.85rem; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); overflow-x:auto; font-family:var(--font-mono); font-size:0.8rem; margin:0.5rem 0;">function doPost(e){
+  var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var d = JSON.parse(e.postData.contents);
+  s.appendRow([d.timestamp, d.name, d.contact, d.course, d.cwScore, d.muScore, d.quizScore, d.totalScore, d.totalTime]);
+  return ContentService.createTextOutput("OK");
+}
+function doGet(){
+  var rows = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+            </li>
+            <li>Click <b>Deploy → New deployment → Web app</b> (Execute as: <i>Me</i>, Who has access: <i>Anyone</i>) and paste the resulting URL above!</li>
+          </ol>
+        </details>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= SITE FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-notice">
+        <i data-lucide="shield-check"></i>
+        <span>Organiser Portal — Confidential participant performance and scoring metrics.</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">
+          <i data-lucide="arrow-left"></i>
+          <span>Back to Hub</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Admin Scripts -->
+  <script type="module">
+    import { initAdminDashboard } from './js/admin.js';
+    import { THEME_KEY } from './js/state.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Theme init
+      const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      if (themeBtn) {
+        themeBtn.onclick = () => {
+          const current = document.documentElement.getAttribute('data-theme') || 'light';
+          const next = current === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          localStorage.setItem(THEME_KEY, next);
+          updateThemeIcon(next);
+        };
+      }
+
+      function updateThemeIcon(t) {
+        const slot = document.getElementById('theme-icon-slot');
+        if (slot) {
+          slot.innerHTML = t === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+
+      initAdminDashboard();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

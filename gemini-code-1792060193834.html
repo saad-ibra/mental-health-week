@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mental Health Week — Mind Matters Activity Hub</title>
+<style>
+:root {
+  --bg: #f7f5f0; --card: #ffffff; --ink: #23262b; --mute: #666b73;
+  --line: #d9d5cb; --hi: #cfe8e4; --act: #ffe08a; --ok: #2e7d5b;
+  --ok-bg: #d3efdf; --bad: #c0392b; --bad-bg: #f6d3ce; --acc: #2a7f78;
+  --acc-hover: #226660; --blk: #e8e4da;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17191c; --card: #202327; --ink: #ecebe6; --mute: #a0a4ab;
+    --line: #3a3e44; --hi: #24474a; --act: #7a6320; --ok: #5cc79a;
+    --ok-bg: #1f4a38; --bad: #ef7b6e; --bad-bg: #5a2a26; --acc: #5bc2b8;
+    --acc-hover: #48a89e; --blk: #2a2d31;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 16px; min-height: 100vh; display: flex; flex-direction: column;
+}
+main { max-width: 980px; width: 100%; margin: 0 auto; flex: 1; }
+header.top-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 20px;
+  flex-wrap: wrap; gap: 10px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { margin: 0; font-size: 1.4rem; }
+.badge {
+  background: var(--hi); color: var(--ink); font-size: 0.8rem;
+  padding: 4px 10px; border-radius: 99px; font-weight: 600;
+}
+button, .btn {
+  font: inherit; padding: 9px 16px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  cursor: pointer; font-weight: 500; transition: 0.15s ease;
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+}
+button:hover { border-color: var(--acc); }
+button.p { background: var(--acc); color: #fff; border-color: var(--acc); font-weight: 600; }
+button.p:hover { background: var(--acc-hover); }
+button.sm { padding: 5px 10px; font-size: 0.85rem; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; padding: 20px; margin-bottom: 16px;
+}
+.view { display: none; }
+.view.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Forms */
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.95rem; }
+.form-group input {
+  width: 100%; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit;
+}
+.form-group input:focus { outline: 2px solid var(--acc); border-color: transparent; }
+
+/* Hub Cards */
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+.puzzle-card {
+  background: var(--card); border: 2px solid var(--line); border-radius: 14px;
+  padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.puzzle-card.done { border-color: var(--ok); background: var(--ok-bg); }
+.puzzle-card h3 { margin: 0 0 6px; font-size: 1.25rem; }
+.score-pill {
+  display: inline-block; font-weight: 700; color: var(--acc);
+  margin: 10px 0; font-size: 1.05rem;
+}
+
+/* Crossword Styles */
+.bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
+.gridwrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+#grid {
+  --s: min(38px, calc((100vw - 64px) / 15));
+  display: grid; grid-template-columns: repeat(15, var(--s));
+  grid-auto-rows: var(--s); gap: 2px; width: max-content; margin: auto;
+}
+.c { position: relative; background: var(--blk); border-radius: 3px; }
+.c.on { background: var(--card); border: 1px solid var(--line); }
+.c.hi { background: var(--hi); }
+.c.act { background: var(--act); }
+.c input {
+  width: 100%; height: 100%; border: 0; background: transparent;
+  text-align: center; font: 600 calc(var(--s) * 0.5) system-ui;
+  text-transform: uppercase; color: var(--ink); padding: 0;
+  caret-color: transparent; outline: 0;
+}
+.c.ok input { color: var(--ok); }
+.c.bad input { color: var(--bad); }
+.n { position: absolute; top: 1px; left: 2px; font-size: 9px; color: var(--mute); pointer-events: none; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+.cl {
+  display: flex; gap: 10px; align-items: center; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px;
+  margin-bottom: 8px; cursor: pointer;
+}
+.cl.act { outline: 2px solid var(--acc); }
+.cl .e { font-size: 2rem; line-height: 1; flex: none; }
+.cl b { color: var(--acc); }
+.cl small { color: var(--mute); }
+
+/* Match-Up Styles */
+.board { display: grid; grid-template-columns: 90px 1fr; gap: 10px 14px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.t {
+  width: 100%; border: 2px solid var(--line); background: var(--card);
+  color: var(--ink); border-radius: 12px; text-align: left; padding: 10px; min-height: 68px;
+}
+.pic { font-size: 2.2rem; text-align: center; line-height: 1; padding: 12px 0; justify-content: center; }
+.t.sel { background: var(--act); border-color: var(--acc); }
+.t.ok { background: var(--ok-bg); border-color: var(--ok); cursor: default; }
+.t.bad { background: var(--bad-bg); animation: shake 0.3s; }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* Admin Table & Leaderboards */
+table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.92rem; }
+th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; }
+th { color: var(--mute); font-weight: 600; background: var(--bg); }
+.winner-banner {
+  background: linear-gradient(135deg, var(--hi), var(--ok-bg));
+  border: 2px solid var(--acc); border-radius: 14px; padding: 18px;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.winner-trophy { font-size: 3rem; line-height: 1; }
+.qr-box {
+  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+  background: var(--bg); padding: 16px; border-radius: 12px; border: 1px solid var(--line);
+}
+footer {
+  margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line);
+  color: var(--mute); font-size: 0.85rem; display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; gap: 10px;
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="top-nav">
+    <div class="brand">
+      <span style="font-size:1.8rem">🧠</span>
+      <div>
+        <h1>Mind Matters Hub</h1>
+        <small style="color:var(--mute)">Mental Health Week Individual Activity</small>
+      </div>
+    </div>
+    <div id="user-badge-area" style="display:none; align-items:center; gap:8px;">
+      <span class="badge" id="active-user-pill"></span>
+      <button class="sm" onclick="showView('view-hub')">Puzzle Hub</button>
+    </div>
+  </header>
+
+  <!-- VIEW 1: DEMOGRAPHIC DETAILS -->
+  <section id="view-reg" class="view active">
+    <div class="card" style="max-width: 520px; margin: 20px auto;">
+      <h2 style="margin-top:0">Welcome! Let's Get Started</h2>
+      <p style="color:var(--mute); margin-bottom:18px;">
+        Enter your details below to unlock the Mental Health Week puzzles. You can play either puzzle or both!
+      </p>
+      <form id="reg-form">
+        <div class="form-group">
+          <label for="p-name">Full Name *</label>
+          <input type="text" id="p-name" required placeholder="e.g., Priya Sharma">
+        </div>
+        <div class="form-group">
+          <label for="p-contact">Contact Info (Email or Phone) *</label>
+          <input type="text" id="p-contact" required placeholder="e.g., priya@example.com / 9876543210">
+        </div>
+        <div class="form-group">
+          <label for="p-course">Course / Department Name *</label>
+          <input type="text" id="p-course" required placeholder="e.g., B.Sc. Psychology / Year 2">
+        </div>
+        <button type="submit" class="p" style="width:100%; padding:12px; margin-top:6px;">
+          Continue to Puzzles →
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- VIEW 2: PUZZLE CHOICE HUB -->
+  <section id="view-hub" class="view">
+    <div class="card">
+      <h2 style="margin-top:0">Choose Your Puzzle</h2>
+      <p style="color:var(--mute); margin:0;">
+        Play either puzzle or complete both one after another to maximize your total score! When you are finished, tap <b>Submit Final Entry</b> below.
+      </p>
+      <div class="hub-grid">
+        <!-- Crossword Card -->
+        <div class="puzzle-card" id="card-cw">
+          <div>
+            <div style="font-size:2.2rem; margin-bottom:8px;">📝</div>
+            <h3>1. Mind Matters Crossword</h3>
+            <p style="color:var(--mute); font-size:0.92rem;">
+              10 picture + statement clues about mental wellbeing.
+            </p>
+          </div>
+          <div>
+            <div class="score-pill" id="hub-cw-status">Not started (Max 1,000 pts)</div>
+            <button class="p" style="width:100%" onclick="openCrossword()">Play Crossword</button>
+          </div>
+        </div>
+
+        <!-- Match-Up Card -->
+        <div class="puzzle-card" id="card-mu">
+          <div>
+            <div style="font-size:2.2rem; margin-bottom:8px;">🧩</div>
+            <h3>2. Mind Matters Match-Up</h3>
+            <p style="color:var(--mute); font-size:0.92rem;">
+              Match 8 wellbeing icons with their core statements as fast as you can.
+            </p>
+          </div>
+          <div>
+            <div class="score-pill" id="hub-mu-status">Not started (Max 1,000 pts)</div>
+            <button class="p" style="width:100%" onclick="openMatchUp()">Play Match-Up</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--line); padding-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <span style="color:var(--mute)">Your Current Total Score:</span>
+          <strong style="font-size:1.3rem; color:var(--acc); margin-left:6px;" id="hub-total-score">0 pts</strong>
+        </div>
+        <button class="p" id="btn-finish-all" onclick="submitParticipantSession()">
+          ✅ Submit Final Entry & Finish
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 3: CROSSWORD PUZZLE -->
+  <section id="view-cw" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+      <h2 style="margin:0">🧠 Mind Matters Crossword</h2>
+      <button onclick="saveAndExitCrossword()">← Save & Return to Hub</button>
+    </div>
+    <p style="color:var(--mute); margin:0 0 12px;">
+      Picture + statement clues about mental wellbeing. Tap "Check & Score" anytime to update your points.
+    </p>
+    <div class="bar">
+      <button class="p" id="chk">Check & Score</button>
+      <button id="hint">Hint (-25 pts)</button>
+      <button id="rev">Reveal All (0 pts)</button>
+      <button id="clr">Clear</button>
+      <span id="cw-timer" style="font-weight:600; margin-left:auto;">⏱ 0s</span>
+      <span id="msg" style="font-weight:700; color:var(--acc);"></span>
+    </div>
+    <div class="gridwrap"><div id="grid"></div></div>
+    <div class="cols">
+      <section><h3 style="font-size:1.05rem; margin:0 0 8px;">Across</h3><div id="A"></div></section>
+      <section><h3 style="font-size:1.05rem; margin:0 0 8px;">Down</h3><div id="D"></div></section>
+    </div>
+    <div id="ins" class="card" style="margin-top:16px;" hidden>
+      <h3 style="margin-top:0">💡 Insights unlocked</h3>
+      <ul id="il" style="margin:0; padding-left:20px;"></ul>
+    </div>
+    <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px;">
+      <button class="p" onclick="saveAndExitCrossword()">Save Progress & Back to Puzzle Hub →</button>
+    </div>
+  </section>
+
+  <!-- VIEW 4: MATCH-UP PUZZLE -->
+  <section id="view-mu" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+      <h2 style="margin:0">🧩 Mind Matters Match-Up</h2>
+      <button onclick="showView('view-hub')">← Return to Hub</button>
+    </div>
+    <p style="color:var(--mute); margin:0 0 12px;">
+      Tap a picture on the left, then tap the matching statement on the right.
+    </p>
+    <div class="bar" style="font-weight:600;">
+      <span>✅ Matched: <span id="m">0</span>/8</span>
+      <span>❌ Slips: <span id="x">0</span></span>
+      <span>⏱ <span id="tm">0</span>s</span>
+      <button class="sm" id="rs" style="margin-left:auto;">Restart Game</button>
+    </div>
+    <div class="board">
+      <div class="col" id="L"></div>
+      <div class="col" id="R"></div>
+    </div>
+    <div id="mu-ins" class="card" style="margin-top:14px; min-height:3.2em;" aria-live="polite">
+      Pick a picture to begin.
+    </div>
+    <div id="done" style="margin:12px 0; font-size:1.1rem; font-weight:700; color:var(--acc);"></div>
+    <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+      <button class="p" onclick="showView('view-hub')">Save & Back to Puzzle Hub →</button>
+    </div>
+  </section>
+
+  <!-- VIEW 5: PARTICIPANT THANK YOU SCREEN -->
+  <section id="view-thanks" class="view">
+    <div class="card" style="max-width:540px; margin:28px auto; text-align:center; padding:32px 20px;">
+      <div style="font-size:3.4rem; margin-bottom:10px;">🎉</div>
+      <h2 style="margin:0 0 8px;">Thank You for Participating!</h2>
+      <p style="color:var(--mute); margin-bottom:20px;">
+        Your responses for <b>Mental Health Week</b> have been recorded. Results and top scorers are visible to the event organizers.
+      </p>
+      <div class="card" style="background:var(--bg); text-align:left; margin-bottom:20px;">
+        <div><b>Participant:</b> <span id="ty-name"></span></div>
+        <div><b>Course:</b> <span id="ty-course"></span></div>
+        <div><b>Puzzles Completed:</b> <span id="ty-puzzles"></span></div>
+      </div>
+      <button class="p" onclick="resetForNextParticipant()">Start New Session (Next Participant)</button>
+    </div>
+  </section>
+
+  <!-- VIEW 6: ADMIN LOGIN & DASHBOARD -->
+  <section id="view-admin" class="view">
+    <!-- Admin Login Box -->
+    <div id="admin-login-box" class="card" style="max-width:420px; margin:24px auto;">
+      <h2 style="margin-top:0">🔒 Organiser Admin Access</h2>
+      <p style="color:var(--mute); font-size:0.9rem;">
+        Enter the organiser passcode to view participant scores, highest scorer rankings, and the shareable QR code.
+      </p>
+      <div class="form-group">
+        <label for="admin-pass">Admin Passcode</label>
+        <input type="password" id="admin-pass" placeholder="Default: mentalhealth2026">
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="p" onclick="verifyAdmin()">Unlock Dashboard</button>
+        <button onclick="exitAdmin()">Cancel</button>
+      </div>
+      <p id="admin-err" style="color:var(--bad); font-size:0.85rem; margin-top:8px; display:none;">
+        Incorrect passcode. (Default passcode: <b>mentalhealth2026</b>)
+      </p>
+    </div>
+
+    <!-- Unlocked Admin Content -->
+    <div id="admin-panel-content" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <h2 style="margin:0">📊 Organiser Results & QR Hub</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="sm" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="sm" onclick="clearAllRecords()" style="color:var(--bad);">🗑 Clear Data</button>
+          <button class="sm p" onclick="exitAdmin()">Exit Admin</button>
+        </div>
+      </div>
+
+      <!-- HIGHEST SCORER SPOTLIGHT -->
+      <div id="winner-spotlight" class="winner-banner" style="display:none;">
+        <div class="winner-trophy">🏆</div>
+        <div style="flex:1;">
+          <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--acc);">
+            Overall Highest Scorer
+          </div>
+          <h3 id="win-name" style="margin:2px 0; font-size:1.4rem;">—</h3>
+          <div id="win-meta" style="color:var(--mute); font-size:0.92rem;"></div>
+        </div>
+        <div style="text-align:right;">
+          <div id="win-score" style="font-size:1.8rem; font-weight:800; color:var(--ok);">0 pts</div>
+          <small id="win-breakdown" style="color:var(--mute);"></small>
+        </div>
+      </div>
+
+      <!-- Category Leaders -->
+      <div class="hub-grid" style="margin-top:0;">
+        <div class="card" style="margin:0;">
+          <small style="color:var(--mute); font-weight:600;">🥇 TOP CROSSWORD SCORER</small>
+          <div id="top-cw-box" style="margin-top:6px; font-weight:700;">No entries yet</div>
+        </div>
+        <div class="card" style="margin:0;">
+          <small style="color:var(--mute); font-weight:600;">🥇 TOP MATCH-UP SCORER</small>
+          <div id="top-mu-box" style="margin-top:6px; font-weight:700;">No entries yet</div>
+        </div>
+      </div>
+
+      <!-- FULL LEADERBOARD TABLE -->
+      <div class="card" style="overflow-x:auto;">
+        <h3 style="margin-top:0">All Participant Submissions (<span id="total-count">0</span>)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Course</th>
+              <th>Contact</th>
+              <th>Crossword</th>
+              <th>Match-Up</th>
+              <th>Total Score</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <tr><td colspan="8" style="text-align:center; color:var(--mute);">No submissions recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- QR CODE GENERATOR -->
+      <div class="card">
+        <h3 style="margin-top:0">📱 Activity QR Code for Participants</h3>
+        <p style="color:var(--mute); font-size:0.92rem;">
+          Host this single HTML file on any web link (e.g., GitHub Pages, Netlify Drop, or school server), paste the public URL below, and print or project the QR code for students to scan.
+        </p>
+        <div class="qr-box">
+          <img id="qr-img" alt="Activity QR Code" width="160" height="160" style="background:#fff; padding:8px; border-radius:8px; border:1px solid var(--line);">
+          <div style="flex:1; min-width:240px;">
+            <div class="form-group">
+              <label for="qr-url-input">Public Activity URL</label>
+              <input type="url" id="qr-url-input" oninput="updateQRCode()">
+            </div>
+            <button class="sm" onclick="window.print()">🖨 Print QR Page</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MULTI-DEVICE CLOUD SYNC (OPTIONAL GOOGLE SHEETS WEBHOOK) -->
+      <div class="card">
+        <h3 style="margin-top:0">☁️ Multi-Phone Cloud Sync (Optional Setup)</h3>
+        <p style="color:var(--mute); font-size:0.9rem;">
+          If students scan the QR code on their own phones, paste a Google Apps Script Web App URL below so every phone automatically sends its score to your central Google Sheet and pulls live leaderboard data here.
+        </p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="url" id="cloud-webhook-url" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink);">
+          <button class="p sm" onclick="saveWebhookUrl()">Save & Sync Now</button>
+        </div>
+        <details style="margin-top:10px; font-size:0.85rem; color:var(--mute);">
+          <summary style="cursor:pointer; font-weight:600; color:var(--acc);">How to create a free Google Sheet sync link in 60 seconds</summary>
+          <ol style="margin-top:8px; padding-left:20px;">
+            <li>Open a new Google Sheet, click <b>Extensions → Apps Script</b>.</li>
+            <li>Paste this script:
+              <pre style="background:var(--bg); padding:8px; border-radius:6px; overflow-x:auto;">function doPost(e){
+  var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var d = JSON.parse(e.postData.contents);
+  s.appendRow([d.timestamp, d.name, d.contact, d.course, d.cwScore, d.muScore, d.totalScore, d.totalTime]);
+  return ContentService.createTextOutput("OK");
+}
+function doGet(){
+  var rows = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+            </li>
+            <li>Click <b>Deploy → New deployment → Web app</b> (Execute as: <i>Me</i>, Who has access: <i>Anyone</i>) and paste the URL above!</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Educational puzzle only — not a diagnostic tool. Reach out to a trusted person or helpline if struggling.</span>
+    <button class="sm" onclick="openAdminLogin()" style="opacity:0.75;">🔒 Admin</button>
+  </footer>
+</main>
+
+<script>
+/* ================= STATE & STORAGE ================= */
+const STORAGE_KEY = 'mhw_submissions_2026';
+const WEBHOOK_KEY = 'mhw_webhook_url';
+const ADMIN_PASS = 'mentalhealth2026'; // Organiser password
+
+let currentUser = null;
+let sessionData = {
+  cwScore: 0, cwTime: 0, cwDone: false, cwHints: 0, cwRevealed: false,
+  muScore: 0, muTime: 0, muDone: false, muSlips: 0
+};
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'view-hub') refreshHubUI();
+}
+
+/* ================= DEMOGRAPHIC INTAKE ================= */
+document.getElementById('reg-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  currentUser = {
+    name: document.getElementById('p-name').value.trim(),
+    contact: document.getElementById('p-contact').value.trim(),
+    course: document.getElementById('p-course').value.trim()
+  };
+  sessionData = {
+    cwScore: 0, cwTime: 0, cwDone: false, cwHints: 0, cwRevealed: false,
+    muScore: 0, muTime: 0, muDone: false, muSlips: 0
+  };
+  document.getElementById('active-user-pill').textContent = `👤 ${currentUser.name} (${currentUser.course})`;
+  document.getElementById('user-badge-area').style.display = 'flex';
+  resetCrosswordBoard();
+  showView('view-hub');
+});
+
+function refreshHubUI() {
+  const cwCard = document.getElementById('card-cw');
+  const muCard = document.getElementById('card-mu');
+  cwCard.classList.toggle('done', sessionData.cwDone);
+  muCard.classList.toggle('done', sessionData.muDone);
+
+  document.getElementById('hub-cw-status').textContent = sessionData.cwScore > 0 || sessionData.cwDone
+    ? `Score: ${sessionData.cwScore} pts (${sessionData.cwTime}s)`
+    : 'Not started (Max 1,000 pts)';
+
+  document.getElementById('hub-mu-status').textContent = sessionData.muScore > 0 || sessionData.muDone
+    ? `Score: ${sessionData.muScore} pts (${sessionData.muTime}s)`
+    : 'Not started (Max 1,000 pts)';
+
+  const total = sessionData.cwScore + sessionData.muScore;
+  document.getElementById('hub-total-score').textContent = `${total} pts`;
+}
+
+/* ================= CROSSWORD ENGINE ================= */
+const W = [
+  ["STRESS",0,4,"A","😫","The body's alarm response to pressure or demands. A little can motivate; too much for too long wears us down.","Short bursts of stress can sharpen focus; chronic stress is the one linked to poorer sleep, mood and health."],
+  ["EMPATHY",2,5,"A","🤝","Trying to understand and share what another person is feeling, not just what they say.","Listening without rushing to fix is often the most helpful support."],
+  ["ANXIETY",4,5,"A","😰","Persistent worry or fear about what might happen, often with a racing heart or restless mind.","Anxiety disorders are among the most common mental health conditions worldwide, and they are treatable."],
+  ["MEMORY",6,0,"A","🐘","Our ability to store and recall experiences. It can get patchy when we are exhausted or overloaded.","Poor sleep and high stress both make learning and recall harder."],
+  ["BALANCE",8,7,"A","⚖️","Fitting work, study, rest and relationships together so no one area swallows everything.","Protecting rest and social time is part of performing well, not a reward for it."],
+  ["RESILIENCE",10,5,"A","🌱","The ability to adapt and bounce back after setbacks. It can be built and is not a fixed trait.","Resilience grows through supportive relationships, routines and learned coping skills."],
+  ["THERAPY",0,5,"D","🛋️","Talking treatment with a trained professional to understand feelings and build coping tools.","Seeking therapy is a sign of self-awareness, and many people use it without a 'crisis'."],
+  ["SLEEP",4,1,"D","😴","Nightly rest of roughly 7–9 hours for most adults. Skimping on it affects mood and concentration.","Regular sleep and wake times support emotional regulation."],
+  ["MOOD",5,3,"D","🌦️","How we feel over hours or days, like emotional weather that shifts and passes.","Mood changes are normal; long-lasting low mood is worth talking to someone about."],
+  ["ISOLATION",4,8,"D","🏝️","Being cut off from other people, whether by circumstance or by choice, and feeling alone as a result.","Strong social connection is one of the best-supported protections for wellbeing."]
+];
+
+const g = document.getElementById('grid'), cells = {}, words = [];
+let act = 0, cwTimer = null, cwStart = 0;
+
+W.forEach((x, i) => {
+  const [w, r, c, d] = x, o = { w, r, c, d, e: x[4], cl: x[5], tip: x[6], cs: [] };
+  for (let k = 0; k < w.length; k++) {
+    const rr = r + (d == "D" ? k : 0), cc = c + (d == "A" ? k : 0), key = rr + "," + cc;
+    (cells[key] = cells[key] || { r: rr, c: cc, ch: w[k], ws: [] }).ws.push(i);
+    o.cs.push(key);
+  }
+  words.push(o);
+});
+
+let num = 0; const nums = {};
+Object.values(cells).sort((a, b) => a.r - b.r || a.c - b.c).forEach(c => {
+  const st = c.ws.some(i => words[i].cs[0] == c.r + "," + c.c);
+  if (st) nums[c.r + "," + c.c] = ++num;
+});
+words.forEach(w => w.n = nums[w.cs[0]]);
+
+const maxR = Math.max(...Object.values(cells).map(c => c.r)) + 1;
+for (let r = 0; r < maxR; r++) for (let c = 0; c < 15; c++) {
+  const k = r + "," + c, d = document.createElement('div'), cell = cells[k];
+  d.className = 'c';
+  if (cell) {
+    d.classList.add('on'); cell.el = d;
+    const n = nums[k]; if (n) d.innerHTML = '<span class="n">' + n + '</span>';
+    const inp = document.createElement('input');
+    inp.maxLength = 1; inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', 'Row ' + (r + 1) + ' column ' + (c + 1));
+    cell.in = inp; d.appendChild(inp);
+    inp.onfocus = () => pick(cell);
+    inp.onclick = () => pick(cell, true);
+    inp.oninput = () => {
+      inp.value = inp.value.replace(/[^a-z]/gi, '').slice(-1).toUpperCase();
+      d.classList.remove('ok', 'bad');
+      if (inp.value) step(cell, 1);
+    };
+    inp.onkeydown = e => {
+      if (e.key == 'Backspace' && !inp.value) { step(cell, -1); e.preventDefault(); }
+      const m = { ArrowRight: [0, 1, 'A'], ArrowLeft: [0, -1, 'A'], ArrowDown: [1, 0, 'D'], ArrowUp: [-1, 0, 'D'] }[e.key];
+      if (m) {
+        const t = cells[(cell.r + m[0]) + "," + (cell.c + m[1])];
+        if (t) { act = t.ws.find(i => words[i].d == m[2]) ?? t.ws[0]; t.in.focus(); paint(); }
+        e.preventDefault();
+      }
+    };
+  }
+  g.appendChild(d);
+}
+
+function pick(cell, tog) {
+  if (!cell.ws.includes(act)) act = cell.ws[0];
+  else if (tog && cell.ws.length > 1) act = cell.ws.find(i => i != act);
+  paint();
+}
+function step(cell, dir) {
+  const w = words[act];
+  let i = w.cs.indexOf(cell.r + "," + cell.c) + dir;
+  if (i >= 0 && i < w.cs.length) cells[w.cs[i]].in.focus();
+}
+function paint() {
+  Object.values(cells).forEach(c => c.el.classList.remove('hi', 'act'));
+  words[act].cs.forEach(k => cells[k].el.classList.add('hi'));
+  document.querySelectorAll('.cl').forEach(e => e.classList.toggle('act', +e.dataset.i == act));
+}
+
+words.forEach((w, i) => {
+  const d = document.createElement('div'); d.className = 'cl'; d.dataset.i = i;
+  d.innerHTML = '<span class="e" aria-hidden="true">' + w.e + '</span><div><b>' + w.n + '.</b> ' + w.cl + ' <small>(' + w.w.length + ' letters)</small></div>';
+  d.onclick = () => { act = i; cells[w.cs.find(k => !cells[k].in.value) || w.cs[0]].in.focus(); paint(); };
+  document.getElementById(w.d).appendChild(d);
+});
+
+function openCrossword() {
+  showView('view-cw');
+  if (!cwStart) cwStart = Date.now() - (sessionData.cwTime * 1000);
+  clearInterval(cwTimer);
+  cwTimer = setInterval(() => {
+    if (!sessionData.cwDone) {
+      sessionData.cwTime = Math.floor((Date.now() - cwStart) / 1000);
+      document.getElementById('cw-timer').textContent = `⏱ ${sessionData.cwTime}s`;
+    }
+  }, 500);
+  paint();
+}
+
+function evaluateCrossword() {
+  let wrong = 0, done = 0;
+  Object.values(cells).forEach(c => {
+    c.el.classList.remove('ok', 'bad');
+    if (c.in.value) {
+      const ok = c.in.value == c.ch;
+      c.el.classList.add(ok ? 'ok' : 'bad');
+      if (!ok) wrong++;
+    }
+  });
+  const il = document.getElementById('il'); il.innerHTML = '';
+  words.forEach(w => {
+    if (w.cs.every(k => cells[k].in.value == cells[k].ch)) {
+      done++;
+      il.innerHTML += '<li><b>' + w.e + ' ' + w.w[0] + w.w.slice(1).toLowerCase() + ':</b> ' + w.tip + '</li>';
+    }
+  });
+  document.getElementById('ins').hidden = !done;
+
+  if (sessionData.cwRevealed) {
+    sessionData.cwScore = 0;
+  } else {
+    const speedBonus = done === words.length ? Math.max(0, 200 - sessionData.cwTime) : 0;
+    const raw = (done * 100) + speedBonus - (sessionData.cwHints * 25);
+    sessionData.cwScore = Math.min(1000, Math.max(0, raw));
+  }
+
+  if (done === words.length) {
+    sessionData.cwDone = true;
+    clearInterval(cwTimer);
+  }
+
+  const msg = document.getElementById('msg');
+  msg.textContent = done == words.length
+    ? `🎉 Solved! Score: ${sessionData.cwScore} pts`
+    : `${done}/${words.length} words (${sessionData.cwScore} pts)`;
+}
+
+document.getElementById('chk').onclick = evaluateCrossword;
+document.getElementById('hint').onclick = () => {
+  const k = words[act].cs.find(k => cells[k].in.value != cells[k].ch);
+  if (k) {
+    sessionData.cwHints++;
+    cells[k].in.value = cells[k].ch;
+    cells[k].in.focus();
+    evaluateCrossword();
+  }
+};
+document.getElementById('rev').onclick = () => {
+  if (!confirm('Revealing all answers will set your Crossword score to 0 pts. Continue?')) return;
+  sessionData.cwRevealed = true;
+  Object.values(cells).forEach(c => c.in.value = c.ch);
+  evaluateCrossword();
+};
+document.getElementById('clr').onclick = resetCrosswordBoard;
+
+function resetCrosswordBoard() {
+  Object.values(cells).forEach(c => { c.in.value = ''; c.el.classList.remove('ok', 'bad'); });
+  document.getElementById('msg').textContent = '';
+  document.getElementById('ins').hidden = true;
+  cwStart = 0;
+}
+
+function saveAndExitCrossword() {
+  clearInterval(cwTimer);
+  evaluateCrossword();
+  showView('view-hub');
+}
+
+/* ================= MATCH-UP ENGINE ================= */
+const P = [
+  ["😴","Sleep","Skimping on rest makes mood, memory and concentration worse.","Regular sleep and wake times help emotions stay steadier."],
+  ["🫂","Support","Talking to someone you trust can make a heavy load feel lighter.","Feeling heard is a powerful protector of wellbeing."],
+  ["🚶","Movement","A short walk can lift mood and ease tension.","Even 10 minutes of movement can help."],
+  ["🫁","Breathing","Slow, deep breaths help calm the body's stress response.","Try breathing out longer than you breathe in."],
+  ["📵","Screen break","Regular breaks from notifications reduce mental overload.","Short offline pauses help attention recover."],
+  ["🎨","Hobbies","Enjoyable activities give the mind a rest from worry.","Doing something just for pleasure is not wasted time."],
+  ["🌱","Resilience","Setbacks are normal, and coping skills can be learned over time.","Resilience is built, not something you either have or lack."],
+  ["🙋","Asking for help","Reaching out early is a sign of strength, not weakness.","Early support often prevents problems from growing."]
+];
+
+const L = document.getElementById('L'), R = document.getElementById('R'), muIns = document.getElementById('mu-ins');
+let sel = null, ok = 0, slip = 0, t0 = 0, muTimer = null;
+const sh = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+function openMatchUp() {
+  showView('view-mu');
+  if (!sessionData.muDone && ok === 0) startMatchUp();
+}
+
+function startMatchUp() {
+  L.innerHTML = R.innerHTML = ''; ok = slip = 0; sel = null; t0 = Date.now();
+  sessionData.muDone = false;
+  document.getElementById('m').textContent = 0;
+  document.getElementById('x').textContent = 0;
+  document.getElementById('done').textContent = '';
+  muIns.textContent = 'Pick a picture to begin.';
+  clearInterval(muTimer);
+  muTimer = setInterval(() => {
+    const s = (Date.now() - t0) / 1000 | 0;
+    document.getElementById('tm').textContent = s;
+    sessionData.muTime = s;
+  }, 500);
+
+  sh([...P.keys()]).forEach(i => {
+    const b = document.createElement('button');
+    b.className = 't pic'; b.textContent = P[i][0];
+    b.setAttribute('aria-label', 'Picture: ' + P[i][1]);
+    b.dataset.i = i; b.onclick = () => pickL(b);
+    L.appendChild(b);
+  });
+  sh([...P.keys()]).forEach(i => {
+    const b = document.createElement('button');
+    b.className = 't'; b.textContent = P[i][2];
+    b.dataset.i = i; b.onclick = () => pickR(b);
+    R.appendChild(b);
+  });
+}
+
+function updateMatchUpScore() {
+  const speedBonus = ok === 8 ? Math.max(0, 200 - (sessionData.muTime * 2)) : 0;
+  sessionData.muScore = Math.min(1000, Math.max(0, (ok * 100) + speedBonus - (slip * 25)));
+  sessionData.muSlips = slip;
+}
+
+function pickL(b) {
+  if (b.classList.contains('ok')) return;
+  if (sel) sel.classList.remove('sel');
+  sel = b; b.classList.add('sel');
+  muIns.textContent = 'Now tap the matching statement.';
+}
+
+function pickR(b) {
+  if (b.classList.contains('ok')) return;
+  if (!sel) { muIns.textContent = 'Pick a picture first.'; return; }
+  if (sel.dataset.i == b.dataset.i) {
+    const i = +b.dataset.i;
+    sel.classList.remove('sel'); sel.classList.add('ok'); b.classList.add('ok');
+    sel = null; ok++;
+    document.getElementById('m').textContent = ok;
+    muIns.innerHTML = '<b>' + P[i][0] + ' ' + P[i][1] + ':</b> ' + P[i][3];
+    updateMatchUpScore();
+    if (ok == 8) {
+      clearInterval(muTimer);
+      sessionData.muDone = true;
+      updateMatchUpScore();
+      document.getElementById('done').textContent =
+        `🎉 All matched in ${sessionData.muTime}s with ${slip} slip${slip == 1 ? '' : 's'}! Score: ${sessionData.muScore} pts`;
+    }
+  } else {
+    slip++;
+    document.getElementById('x').textContent = slip;
+    updateMatchUpScore();
+    b.classList.add('bad');
+    setTimeout(() => b.classList.remove('bad'), 400);
+    muIns.textContent = 'Not quite. Try another statement.';
+  }
+}
+document.getElementById('rs').onclick = startMatchUp;
+
+/* ================= SUBMISSION & LEADERBOARD ================= */
+function getSubmissions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function submitParticipantSession() {
+  evaluateCrossword();
+  const totalScore = sessionData.cwScore + sessionData.muScore;
+  const totalTime = sessionData.cwTime + sessionData.muTime;
+
+  const record = {
+    id: Date.now(),
+    timestamp: new Date().toLocaleString(),
+    name: currentUser.name,
+    contact: currentUser.contact,
+    course: currentUser.course,
+    cwScore: sessionData.cwScore,
+    muScore: sessionData.muScore,
+    totalScore: totalScore,
+    totalTime: totalTime
+  };
+
+  const list = getSubmissions();
+  list.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+
+  // Optional Cloud Webhook Sync
+  const webhook = localStorage.getItem(WEBHOOK_KEY);
+  if (webhook) {
+    fetch(webhook, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) }).catch(() => {});
+  }
+
+  document.getElementById('ty-name').textContent = record.name;
+  document.getElementById('ty-course').textContent = record.course;
+  const played = [];
+  if (record.cwScore > 0 || sessionData.cwDone) played.push('Crossword');
+  if (record.muScore > 0 || sessionData.muDone) played.push('Match-Up');
+  document.getElementById('ty-puzzles').textContent = played.length ? played.join(' & ') : 'Submitted';
+  document.getElementById('user-badge-area').style.display = 'none';
+  showView('view-thanks');
+}
+
+function resetForNextParticipant() {
+  document.getElementById('reg-form').reset();
+  currentUser = null;
+  showView('view-reg');
+}
+
+/* ================= ADMIN PORTAL & HIGHEST SCORER ================= */
+function openAdminLogin() {
+  document.getElementById('admin-login-box').style.display = 'block';
+  document.getElementById('admin-panel-content').style.display = 'none';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('admin-err').style.display = 'none';
+  showView('view-admin');
+}
+
+function verifyAdmin() {
+  const val = document.getElementById('admin-pass').value.trim();
+  if (val === ADMIN_PASS) {
+    document.getElementById('admin-login-box').style.display = 'none';
+    document.getElementById('admin-panel-content').style.display = 'block';
+    document.getElementById('qr-url-input').value = window.location.href.split('#')[0];
+    document.getElementById('cloud-webhook-url').value = localStorage.getItem(WEBHOOK_KEY) || '';
+    updateQRCode();
+    renderAdminLeaderboard();
+  } else {
+    document.getElementById('admin-err').style.display = 'block';
+  }
+}
+
+function exitAdmin() {
+  if (currentUser) showView('view-hub');
+  else showView('view-reg');
+}
+
+function renderAdminLeaderboard() {
+  const list = getSubmissions().sort((a, b) => b.totalScore - a.totalScore || a.totalTime - b.totalTime);
+  document.getElementById('total-count').textContent = list.length;
+
+  const tbody = document.getElementById('leaderboard-body');
+  const spotlight = document.getElementById('winner-spotlight');
+
+  if (list.length === 0) {
+    spotlight.style.display = 'none';
+    document.getElementById('top-cw-box').textContent = 'No entries yet';
+    document.getElementById('top-mu-box').textContent = 'No entries yet';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--mute);">No submissions recorded yet.</td></tr>';
+    return;
+  }
+
+  // Overall Winner
+  const top = list[0];
+  spotlight.style.display = 'flex';
+  document.getElementById('win-name').textContent = top.name;
+  document.getElementById('win-meta').textContent = `${top.course} • ${top.contact}`;
+  document.getElementById('win-score').textContent = `${top.totalScore} pts`;
+  document.getElementById('win-breakdown').textContent = `CW: ${top.cwScore} | MU: ${top.muScore} (${top.totalTime}s)`;
+
+  // Category Winners
+  const topCW = [...list].sort((a, b) => b.cwScore - a.cwScore)[0];
+  const topMU = [...list].sort((a, b) => b.muScore - a.muScore)[0];
+  document.getElementById('top-cw-box').textContent = topCW && topCW.cwScore > 0
+    ? `${topCW.name} (${topCW.course}) — ${topCW.cwScore} pts` : 'No Crossword scores yet';
+  document.getElementById('top-mu-box').textContent = topMU && topMU.muScore > 0
+    ? `${topMU.name} (${topMU.course}) — ${topMU.muScore} pts` : 'No Match-Up scores yet';
+
+  tbody.innerHTML = list.map((r, idx) => `
+    <tr>
+      <td><b>#${idx + 1}</b> ${idx === 0 ? '🏆' : ''}</td>
+      <td><b>${escapeHTML(r.name)}</b></td>
+      <td>${escapeHTML(r.course)}</td>
+      <td>${escapeHTML(r.contact)}</td>
+      <td>${r.cwScore}</td>
+      <td>${r.muScore}</td>
+      <td><strong style="color:var(--acc)">${r.totalScore} pts</strong></td>
+      <td>${r.totalTime}s</td>
+    </tr>
+  `).join('');
+}
+
+function updateQRCode() {
+  const url = document.getElementById('qr-url-input').value.trim() || window.location.href;
+  const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+  document.getElementById('qr-img').src = qrApi;
+}
+
+function exportCSV() {
+  const list = getSubmissions();
+  if (!list.length) { alert('No records to export.'); return; }
+  const headers = ['Rank','Name','Course','Contact','Crossword_Score','MatchUp_Score','Total_Score','Total_Time_Sec','Timestamp'];
+  const sorted = list.sort((a, b) => b.totalScore - a.totalScore || a.totalTime - b.totalTime);
+  const rows = sorted.map((r, i) => [
+    i + 1, `"${r.name}"`, `"${r.course}"`, `"${r.contact}"`,
+    r.cwScore, r.muScore, r.totalScore, r.totalTime, `"${r.timestamp}"`
+  ].join(','));
+  const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Mental_Health_Week_Leaderboard.csv';
+  a.click();
+}
+
+function clearAllRecords() {
+  if (confirm('Delete all stored participant scores on this device?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderAdminLeaderboard();
+  }
+}
+
+async function saveWebhookUrl() {
+  const url = document.getElementById('cloud-webhook-url').value.trim();
+  localStorage.setItem(WEBHOOK_KEY, url);
+  if (!url) { alert('Webhook cleared.'); return; }
+  try {
+    const res = await fetch(url);
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length > 0) {
+      const imported = rows.map((r, idx) => ({
+        id: idx, timestamp: r[0], name: r[1], contact: r[2], course: r[3],
+        cwScore: Number(r[4]) || 0, muScore: Number(r[5]) || 0,
+        totalScore: Number(r[6]) || 0, totalTime: Number(r[7]) || 0
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+      renderAdminLeaderboard();
+      alert('Synced ' + imported.length + ' entries from Google Sheets!');
+    }
+  } catch (e) {
+    alert('Webhook saved! New submissions will post to your Google Sheet.');
+  }
+}
+
+function escapeHTML(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+// Direct URL shortcut: add #admin to the URL to jump straight to Admin Login
+if (window.location.hash === '#admin') openAdminLogin();
+</script>
+</body>
+</html>
