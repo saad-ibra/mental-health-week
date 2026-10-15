@@ -1,4 +1,4 @@
-# Mind Matters — Mental Health Week Activity Hub
+# Mind Matters - Mental Health Week Activity Hub
 
 An interactive, accessible web platform built for **Mental Health Week** to foster mental wellbeing awareness, vocabulary, and healthy habits through engaging puzzles, habit matching, and evidence-based myth-buster quizzes.
 
@@ -25,9 +25,9 @@ Scan this QR code with any smartphone camera to open the activity hub directly:
 ### 1. Participant Experience (`index.html`)
 * **Demographic Intake**: Simple name, course/department, and optional contact registration.
 * **Activity Hub**: Live score tracker, completion badges, and flexible activity selection.
-* **Activity 1 — Mind Matters Crossword**: 10 clues covering stress, empathy, resilience, and balance with clue-level Lucide icons, hint penalty system, and timer.
-* **Activity 2 — Mind Matters Match-Up**: Dual-column game pairing 8 daily wellbeing habits (sleep, movement, breathing, screen breaks, etc.) with actionable scientific takeaways.
-* **Activity 3 — Wellbeing Myth-Buster Quiz**: 8 multiple-choice questions exploring sleep debt, active listening, and stress biology with immediate explanatory insights.
+* **Activity 1: Mind Matters Crossword**: 10 clues covering stress, empathy, resilience, and balance with clue-level Lucide icons, hint penalty system, and timer.
+* **Activity 2: Mind Matters Match-Up**: Dual-column game pairing 8 daily wellbeing habits (sleep, movement, breathing, screen breaks, etc.) with actionable scientific takeaways.
+* **Activity 3: Wellbeing Myth-Buster Quiz**: 8 multiple-choice questions exploring sleep debt, active listening, and stress biology with immediate explanatory insights.
 * **Celebration & Support Resources**: Displays score breakdown alongside trusted mental health support hotlines (Campus Counseling, Tele-MANAS, Vandrevala Foundation, KIRAN).
 
 ### 2. Organiser Admin Dashboard (`admin.html`)
