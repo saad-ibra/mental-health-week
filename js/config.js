@@ -7,7 +7,7 @@
 export const CLOUD_CONFIG = {
   // Google Apps Script Web App URL (Primary Central Database)
   // Format: "https://script.google.com/macros/s/AKfycb.../exec"
-  googleSheetWebhookUrl: "",
+  googleSheetWebhookUrl: "https://script.google.com/macros/s/AKfycbw-IgJ8JfZWYbjWrLOnTTcjmg9Wpu4PXULps1W33lWUKjKTIn8nWfViXjGlj7vdUa1L/exec",
 
   // Optional: Firebase Firestore config
   firebaseConfig: null
