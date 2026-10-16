@@ -21,6 +21,7 @@ import {
   subscribeToSubmissions,
   deleteCloudSubmission,
   testDatabaseConnection,
+  getEffectiveWebhookUrl,
   FIREBASE_CONFIG_KEY
 } from './db.js';
 
@@ -123,12 +124,12 @@ export function verifyAdminPasscode() {
       qrUrlInput.value = window.location.href.split('admin.html')[0].split('#')[0];
     }
     if (webhookInput) {
-      webhookInput.value = getWebhookUrl();
+      webhookInput.value = getEffectiveWebhookUrl() || getWebhookUrl();
     }
 
     updateAdminQRCode();
 
-    // Start real-time subscription if Firebase is configured
+    // Start real-time subscription
     startRealtimeSubscription();
 
     // Also do a local render as fallback
@@ -156,9 +157,11 @@ function startRealtimeSubscription() {
     const syncEl = document.getElementById('admin-sync-status');
     if (syncEl) {
       if (source === 'firebase') {
-        syncEl.innerHTML = '<i data-lucide="cloud" style="width:14px;height:14px;color:var(--success);"></i> <span style="color:var(--success);font-weight:600;">Cloud Synced</span>';
+        syncEl.innerHTML = '<i data-lucide="cloud" style="width:14px;height:14px;color:var(--success);"></i> <span style="color:var(--success);font-weight:600;">Cloud Synced (Firebase)</span>';
+      } else if (source === 'webhook') {
+        syncEl.innerHTML = '<i data-lucide="cloud" style="width:14px;height:14px;color:var(--success);"></i> <span style="color:var(--success);font-weight:600;">Cloud Synced (Google Sheets)</span>';
       } else {
-        syncEl.innerHTML = '<i data-lucide="hard-drive" style="width:14px;height:14px;color:var(--text-muted);"></i> <span style="color:var(--text-muted);font-weight:600;">Local Only</span>';
+        syncEl.innerHTML = '<i data-lucide="hard-drive" style="width:14px;height:14px;color:var(--text-muted);"></i> <span style="color:var(--text-muted);font-weight:600;">Local Only (Connect DB below)</span>';
       }
       if (window.lucide) window.lucide.createIcons();
     }
@@ -559,18 +562,34 @@ async function handleSaveWebhook() {
     const res = await fetch(url);
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
-      const imported = data.map((r, idx) => ({
-        id: idx,
-        timestamp: r[0],
-        name: r[1],
-        contact: r[2],
-        course: r[3],
-        cwScore: Number(r[4]) || 0,
-        muScore: Number(r[5]) || 0,
-        quizScore: Number(r[6]) || 0,
-        totalScore: Number(r[7]) || 0,
-        totalTime: Number(r[8]) || 0
-      }));
+      const imported = data.map((r, idx) => {
+        if (typeof r === 'object' && !Array.isArray(r) && r.name) {
+          return {
+            id: String(r.id || idx),
+            timestamp: r.timestamp || '',
+            name: r.name,
+            course: r.course || '',
+            contact: r.contact || '',
+            cwScore: Number(r.cwScore) || 0,
+            muScore: Number(r.muScore) || 0,
+            quizScore: Number(r.quizScore) || 0,
+            totalScore: Number(r.totalScore) || 0,
+            totalTime: Number(r.totalTime) || 0
+          };
+        }
+        return {
+          id: idx,
+          timestamp: r[0],
+          name: r[1],
+          contact: r[2],
+          course: r[3],
+          cwScore: Number(r[4]) || 0,
+          muScore: Number(r[5]) || 0,
+          quizScore: Number(r[6]) || 0,
+          totalScore: Number(r[7]) || 0,
+          totalTime: Number(r[8]) || 0
+        };
+      });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
       currentSubmissions = imported;
       renderAllAdminData(imported);
@@ -581,6 +600,9 @@ async function handleSaveWebhook() {
   } catch (err) {
     alert('Webhook URL saved! Submissions will post to your Google Sheet.');
   }
+
+  // Activate real-time cloud sync
+  startRealtimeSubscription();
 }
 
 function escapeHTML(str) {

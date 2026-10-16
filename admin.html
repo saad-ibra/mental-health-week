@@ -374,14 +374,24 @@
             <li>Create a Google Sheet and click <b>Extensions &rarr; Apps Script</b>.</li>
             <li>Paste this snippet:
               <pre style="background:var(--surface-card); padding:0.85rem; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); overflow-x:auto; font-family:var(--font-mono); font-size:0.8rem; margin:0.5rem 0;">function doPost(e){
-  var s = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["ID", "Timestamp", "Name", "Course", "Contact", "Crossword", "MatchUp", "Quiz", "Total Score", "Total Time"]);
+  }
   var d = JSON.parse(e.postData.contents);
-  s.appendRow([d.timestamp, d.name, d.contact, d.course, d.cwScore, d.muScore, d.quizScore, d.totalScore, d.totalTime]);
+  sheet.appendRow([d.id || new Date().getTime(), d.timestamp, d.name, d.course, d.contact, d.cwScore, d.muScore, d.quizScore, d.totalScore, d.totalTime]);
   return ContentService.createTextOutput("OK");
 }
 function doGet(){
-  var rows = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getDataRange().getValues();
-  return ContentService.createTextOutput(JSON.stringify(rows)).setMimeType(ContentService.MimeType.JSON);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  if (rows.length &lt;= 1) return ContentService.createTextOutput("[]").setMimeType(ContentService.MimeType.JSON);
+  var subs = [];
+  for (var i = 1; i &lt; rows.length; i++) {
+    var r = rows[i];
+    subs.push({ id: String(r[0]), timestamp: String(r[1]), name: String(r[2]), course: String(r[3]), contact: String(r[4]), cwScore: Number(r[5])||0, muScore: Number(r[6])||0, quizScore: Number(r[7])||0, totalScore: Number(r[8])||0, totalTime: Number(r[9])||0 });
+  }
+  return ContentService.createTextOutput(JSON.stringify(subs)).setMimeType(ContentService.MimeType.JSON);
 }</pre>
             </li>
             <li>Click <b>Deploy &rarr; New deployment &rarr; Web app</b> (Execute as: <i>Me</i>, Who has access: <i>Anyone</i>) and paste the resulting URL above!</li>

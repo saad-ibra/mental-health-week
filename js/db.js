@@ -1,25 +1,25 @@
 /* ===================================================================
    UNIVERSAL CLOUD DATABASE ADAPTER — MENTAL HEALTH WEEK
-   Firebase Firestore Realtime Sync + Google Sheets Webhook + Local Cache
+   Google Sheets Webhook (Live Cloud DB) + Firebase Firestore + Local Cache
    =================================================================== */
 
 import { STORAGE_KEY, WEBHOOK_KEY, getSubmissions } from './state.js';
+import { getCentralWebhookUrl, getCentralFirebaseConfig } from './config.js';
 
 export const FIREBASE_CONFIG_KEY = 'mhw_firebase_config';
 const SUBMISSIONS_COLLECTION = 'mhw_submissions';
 
 let dbInstance = null;
 let firestoreUnsubscribe = null;
+let webhookPollingTimer = null;
 let isInitialized = false;
 
-// Default Firebase configuration placeholder if organizer configures it
+export function getEffectiveWebhookUrl() {
+  return getCentralWebhookUrl();
+}
+
 export function getFirebaseConfig() {
-  try {
-    const raw = localStorage.getItem(FIREBASE_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
+  return getCentralFirebaseConfig();
 }
 
 export function saveFirebaseConfig(config) {
@@ -28,7 +28,6 @@ export function saveFirebaseConfig(config) {
   } else {
     localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
   }
-  // Re-init
   initCloudDB();
 }
 
@@ -58,9 +57,62 @@ export function initCloudDB() {
 }
 
 /**
+ * Fetches latest submissions from Google Sheets Webhook GET endpoint
+ */
+export async function fetchSubmissionsFromWebhook(url) {
+  if (!url) url = getEffectiveWebhookUrl();
+  if (!url) return null;
+
+  try {
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      const formatted = data.map((r, idx) => {
+        if (typeof r === 'object' && !Array.isArray(r) && r.name) {
+          return {
+            id: String(r.id || idx),
+            timestamp: r.timestamp || '',
+            name: String(r.name || 'Anonymous'),
+            course: String(r.course || ''),
+            contact: String(r.contact || ''),
+            cwScore: Number(r.cwScore) || 0,
+            muScore: Number(r.muScore) || 0,
+            quizScore: Number(r.quizScore) || 0,
+            totalScore: Number(r.totalScore) || 0,
+            totalTime: Number(r.totalTime) || 0
+          };
+        } else if (Array.isArray(r) && r.length >= 8) {
+          return {
+            id: String(r[0] || idx),
+            timestamp: String(r[1] || ''),
+            name: String(r[2] || 'Anonymous'),
+            course: String(r[3] || ''),
+            contact: String(r[4] || ''),
+            cwScore: Number(r[5]) || 0,
+            muScore: Number(r[6]) || 0,
+            quizScore: Number(r[7]) || 0,
+            totalScore: Number(r[8]) || 0,
+            totalTime: Number(r[9]) || 0
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (formatted.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(formatted));
+        return formatted;
+      }
+    }
+  } catch (err) {
+    console.warn('Cloud webhook fetch notice:', err);
+  }
+  return null;
+}
+
+/**
  * Saves a participant submission to all available destinations:
- * 1. Firebase Firestore (Central Cloud)
- * 2. Google Sheets Webhook (Optional Central Spreadsheet)
+ * 1. Google Sheets Webhook (Central Online Database)
+ * 2. Firebase Firestore (if configured)
  * 3. LocalStorage (Offline Resilience Cache)
  */
 export async function saveCloudSubmission(record) {
@@ -88,7 +140,25 @@ export async function saveCloudSubmission(record) {
     console.warn('Local cache save warning:', err);
   }
 
-  // 2. Save to Firebase Firestore if initialized
+  // 2. Save to Google Sheets Webhook (Primary Central Cloud Database)
+  const webhookUrl = getEffectiveWebhookUrl();
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      result.webhookSaved = true;
+      result.cloudSaved = true;
+      console.log('Submission posted to central Google Sheets cloud database.');
+    } catch (err) {
+      console.warn('Google Sheets cloud post notice:', err);
+    }
+  }
+
+  // 3. Save to Firebase Firestore if initialized
   if (!dbInstance) {
     initCloudDB();
   }
@@ -102,23 +172,7 @@ export async function saveCloudSubmission(record) {
       result.cloudSaved = true;
       console.log('Submission saved to Firebase Firestore.');
     } catch (err) {
-      console.warn('Firestore write failed, will rely on local/webhook:', err);
-    }
-  }
-
-  // 3. Post to Google Sheets Webhook if configured
-  const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
-  if (webhookUrl) {
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
-      });
-      result.webhookSaved = true;
-    } catch (err) {
-      console.warn('Google Sheets webhook post failed:', err);
+      console.warn('Firestore write failed, relying on webhook:', err);
     }
   }
 
@@ -128,19 +182,24 @@ export async function saveCloudSubmission(record) {
 /**
  * Subscribes to submissions in real time.
  * If Firebase is available, uses onSnapshot for instant WebSocket updates.
- * Otherwise falls back to localStorage with periodic webhook polling.
+ * If Google Sheets Webhook is configured, polls every 8s.
+ * Always falls back to local cache.
  */
 export function subscribeToSubmissions(callback) {
   if (typeof callback !== 'function') return () => {};
 
-  if (!dbInstance) {
-    initCloudDB();
-  }
-
-  // Clean up any existing listener
+  // Clean up any existing listeners
   if (firestoreUnsubscribe) {
     firestoreUnsubscribe();
     firestoreUnsubscribe = null;
+  }
+  if (webhookPollingTimer) {
+    clearInterval(webhookPollingTimer);
+    webhookPollingTimer = null;
+  }
+
+  if (!dbInstance) {
+    initCloudDB();
   }
 
   // 1. Firebase Realtime Listener
@@ -156,13 +215,12 @@ export function subscribeToSubmissions(callback) {
               const data = doc.data();
               list.push({ ...data, id: doc.id });
             });
-            // Update local cache as well
             localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
             callback(list, 'firebase');
           },
           err => {
-            console.warn('Firestore subscription error, falling back to local:', err);
-            callback(getSubmissions(), 'local');
+            console.warn('Firestore subscription notice, falling back:', err);
+            setupWebhookOrLocalFallback(callback);
           }
         );
       return firestoreUnsubscribe;
@@ -171,19 +229,50 @@ export function subscribeToSubmissions(callback) {
     }
   }
 
-  // 2. Fallback: Local Cache
-  callback(getSubmissions(), 'local');
+  // 2. Setup Webhook Polling or Local Fallback
+  return setupWebhookOrLocalFallback(callback);
+}
+
+function setupWebhookOrLocalFallback(callback) {
+  const webhookUrl = getEffectiveWebhookUrl();
+
+  if (webhookUrl) {
+    // Immediate callback with whatever we have cached
+    callback(getSubmissions(), 'webhook');
+
+    // Fetch immediately from cloud
+    fetchSubmissionsFromWebhook(webhookUrl).then(rows => {
+      if (rows && rows.length > 0) {
+        callback(rows, 'webhook');
+      }
+    });
+
+    // Start background cloud sync every 8 seconds
+    webhookPollingTimer = setInterval(async () => {
+      const rows = await fetchSubmissionsFromWebhook(webhookUrl);
+      if (rows && rows.length > 0) {
+        callback(rows, 'webhook');
+      }
+    }, 8000);
+  } else {
+    // Local cache only
+    callback(getSubmissions(), 'local');
+  }
 
   // Also setup a storage event listener for cross-tab sync
   const storageListener = e => {
     if (e.key === STORAGE_KEY) {
-      callback(getSubmissions(), 'local');
+      callback(getSubmissions(), webhookUrl ? 'webhook' : 'local');
     }
   };
   window.addEventListener('storage', storageListener);
 
   return () => {
     window.removeEventListener('storage', storageListener);
+    if (webhookPollingTimer) {
+      clearInterval(webhookPollingTimer);
+      webhookPollingTimer = null;
+    }
     if (firestoreUnsubscribe) {
       firestoreUnsubscribe();
       firestoreUnsubscribe = null;
@@ -234,7 +323,6 @@ export async function testDatabaseConnection(config) {
   try {
     const tempApp = window.firebase.initializeApp(config, 'test-app-' + Date.now());
     const tempDb = tempApp.firestore();
-    // Test write and delete of a probe document
     const probeDoc = tempDb.collection('_health_check').doc('probe');
     await probeDoc.set({ timestamp: Date.now() });
     await probeDoc.delete();

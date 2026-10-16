@@ -414,7 +414,9 @@
         const syncText = document.getElementById('lb-sync-text');
         if (syncText) {
           if (source === 'firebase') {
-            syncText.innerHTML = '<span style="color:var(--success); font-weight:700;">Live Realtime Stream Active</span>';
+            syncText.innerHTML = '<span style="color:var(--success); font-weight:700;">Live Realtime Stream (Firebase)</span>';
+          } else if (source === 'webhook') {
+            syncText.innerHTML = '<span style="color:var(--success); font-weight:700;">Live Cloud Synced (Google Sheets)</span>';
           } else {
             syncText.innerHTML = 'Auto-refreshes every <strong>10</strong> seconds';
           }
