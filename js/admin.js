@@ -1,6 +1,7 @@
 /* ===================================================================
    ADMIN PORTAL LOGIC — MENTAL HEALTH WEEK
-   Analytics KPIs, Leaderboard Table, Search/Filter, CSV, QR, & Webhook
+   Analytics KPIs, Leaderboard Table, Search/Filter, CSV, QR, Webhook,
+   Firebase Cloud DB Config, Real-time Sync, Submission Inspector
    =================================================================== */
 
 import {
@@ -9,11 +10,24 @@ import {
   getSubmissions,
   clearSubmissions,
   getWebhookUrl,
-  setWebhookUrl
+  setWebhookUrl,
+  STORAGE_KEY
 } from './state.js';
+
+import {
+  initCloudDB,
+  saveFirebaseConfig,
+  getFirebaseConfig,
+  subscribeToSubmissions,
+  deleteCloudSubmission,
+  testDatabaseConnection,
+  FIREBASE_CONFIG_KEY
+} from './db.js';
 
 let currentFilterCourse = 'ALL';
 let currentSearchQuery = '';
+let unsubscribeRealtime = null;
+let currentSubmissions = [];
 
 export function initAdminDashboard() {
   const loginForm = document.getElementById('admin-login-form');
@@ -25,6 +39,8 @@ export function initAdminDashboard() {
   const saveWebhookBtn = document.getElementById('admin-save-webhook');
   const qrUrlInput = document.getElementById('admin-qr-url');
   const changePassBtn = document.getElementById('admin-change-pass-btn');
+  const saveFirebaseBtn = document.getElementById('admin-save-firebase');
+  const testFirebaseBtn = document.getElementById('admin-test-firebase');
 
   if (loginForm) {
     loginForm.onsubmit = e => {
@@ -51,6 +67,8 @@ export function initAdminDashboard() {
   if (clearBtn) clearBtn.onclick = handleClearData;
   if (printQrBtn) printQrBtn.onclick = () => window.print();
   if (saveWebhookBtn) saveWebhookBtn.onclick = handleSaveWebhook;
+  if (saveFirebaseBtn) saveFirebaseBtn.onclick = handleSaveFirebaseConfig;
+  if (testFirebaseBtn) testFirebaseBtn.onclick = handleTestFirebaseConnection;
 
   if (changePassBtn) {
     changePassBtn.onclick = handleChangePasscode;
@@ -59,6 +77,15 @@ export function initAdminDashboard() {
   if (qrUrlInput) {
     qrUrlInput.oninput = updateAdminQRCode;
   }
+
+  // Initialize Cloud DB
+  initCloudDB();
+
+  // Load existing Firebase config into form
+  loadFirebaseConfigIntoForm();
+
+  // Setup submission inspector modal close
+  setupInspectorModal();
 }
 
 function handleChangePasscode() {
@@ -100,7 +127,12 @@ export function verifyAdminPasscode() {
     }
 
     updateAdminQRCode();
-    renderAllAdminData();
+
+    // Start real-time subscription if Firebase is configured
+    startRealtimeSubscription();
+
+    // Also do a local render as fallback
+    renderAllAdminData(getSubmissions());
   } else {
     if (errorMsg) {
       errorMsg.style.display = 'block';
@@ -109,8 +141,100 @@ export function verifyAdminPasscode() {
   }
 }
 
-export function renderAllAdminData() {
-  const list = getSubmissions();
+/* ============ REAL-TIME SUBSCRIPTION ============ */
+function startRealtimeSubscription() {
+  // Clean up existing subscription
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+  }
+
+  unsubscribeRealtime = subscribeToSubmissions((list, source) => {
+    currentSubmissions = list;
+    renderAllAdminData(list);
+
+    // Update sync status indicator
+    const syncEl = document.getElementById('admin-sync-status');
+    if (syncEl) {
+      if (source === 'firebase') {
+        syncEl.innerHTML = '<i data-lucide="cloud" style="width:14px;height:14px;color:var(--success);"></i> <span style="color:var(--success);font-weight:600;">Cloud Synced</span>';
+      } else {
+        syncEl.innerHTML = '<i data-lucide="hard-drive" style="width:14px;height:14px;color:var(--text-muted);"></i> <span style="color:var(--text-muted);font-weight:600;">Local Only</span>';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  });
+}
+
+/* ============ FIREBASE CONFIG ============ */
+function loadFirebaseConfigIntoForm() {
+  const config = getFirebaseConfig();
+  if (!config) return;
+
+  const fields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+  fields.forEach(key => {
+    const el = document.getElementById(`fb-${key}`);
+    if (el && config[key]) el.value = config[key];
+  });
+}
+
+function handleSaveFirebaseConfig() {
+  const apiKey = getVal('fb-apiKey');
+  const authDomain = getVal('fb-authDomain');
+  const projectId = getVal('fb-projectId');
+  const storageBucket = getVal('fb-storageBucket');
+  const messagingSenderId = getVal('fb-messagingSenderId');
+  const appId = getVal('fb-appId');
+
+  if (!apiKey || !projectId) {
+    alert('API Key and Project ID are required.');
+    return;
+  }
+
+  const config = { apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId };
+  saveFirebaseConfig(config);
+
+  // Restart subscription with new config
+  startRealtimeSubscription();
+
+  alert('Firebase configuration saved! Cloud sync is now active.');
+}
+
+async function handleTestFirebaseConnection() {
+  const apiKey = getVal('fb-apiKey');
+  const projectId = getVal('fb-projectId');
+
+  if (!apiKey || !projectId) {
+    alert('Please enter at least API Key and Project ID before testing.');
+    return;
+  }
+
+  const config = {
+    apiKey,
+    authDomain: getVal('fb-authDomain'),
+    projectId,
+    storageBucket: getVal('fb-storageBucket'),
+    messagingSenderId: getVal('fb-messagingSenderId'),
+    appId: getVal('fb-appId')
+  };
+
+  const testBtn = document.getElementById('admin-test-firebase');
+  if (testBtn) testBtn.disabled = true;
+
+  const result = await testDatabaseConnection(config);
+
+  if (testBtn) testBtn.disabled = false;
+
+  alert(result.message);
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+/* ============ ADMIN DATA RENDERING ============ */
+export function renderAllAdminData(list) {
+  if (!list) list = getSubmissions();
 
   // Populate Course Filter dropdown
   populateCourseFilter(list);
@@ -122,7 +246,7 @@ export function renderAllAdminData() {
   renderChampionSpotlight(list);
 
   // Render Leaderboard
-  renderLeaderboardTable();
+  renderLeaderboardTable(list);
 
   if (window.lucide) window.lucide.createIcons();
 }
@@ -181,7 +305,7 @@ function renderChampionSpotlight(list) {
   if (banner) {
     banner.style.display = 'flex';
     if (champName) champName.textContent = topOne.name;
-    if (champMeta) champMeta.textContent = `${topOne.course} • ${topOne.contact || 'No contact'}`;
+    if (champMeta) champMeta.textContent = `${topOne.course} | ${topOne.contact || 'No contact'}`;
     if (champScore) champScore.textContent = `${topOne.totalScore} pts`;
     if (champBreakdown) {
       champBreakdown.textContent = `Crossword: ${topOne.cwScore || 0} | Match-Up: ${topOne.muScore || 0} | Quiz: ${topOne.quizScore || 0} (${topOne.totalTime || 0}s)`;
@@ -195,19 +319,19 @@ function renderChampionSpotlight(list) {
 
   if (topCwBox) {
     topCwBox.textContent = topCW && topCW.cwScore > 0
-      ? `${topCW.name} (${topCW.course}) — ${topCW.cwScore} pts`
+      ? `${topCW.name} (${topCW.course}) | ${topCW.cwScore} pts`
       : 'No Crossword scores yet';
   }
 
   if (topMuBox) {
     topMuBox.textContent = topMU && topMU.muScore > 0
-      ? `${topMU.name} (${topMU.course}) — ${topMU.muScore} pts`
+      ? `${topMU.name} (${topMU.course}) | ${topMU.muScore} pts`
       : 'No Match-Up scores yet';
   }
 
   if (topQuizBox) {
     topQuizBox.textContent = topQuiz && topQuiz.quizScore > 0
-      ? `${topQuiz.name} (${topQuiz.course}) — ${topQuiz.quizScore} pts`
+      ? `${topQuiz.name} (${topQuiz.course}) | ${topQuiz.quizScore} pts`
       : 'No Quiz scores yet';
   }
 }
@@ -232,12 +356,13 @@ function populateCourseFilter(list) {
   }
 }
 
-function renderLeaderboardTable() {
+function renderLeaderboardTable(listOverride) {
   const tbody = document.getElementById('admin-leaderboard-body');
   const countSpan = document.getElementById('admin-table-count');
   if (!tbody) return;
 
-  let list = getSubmissions().sort((a, b) => (b.totalScore - a.totalScore) || (a.totalTime - b.totalTime));
+  let list = (listOverride || currentSubmissions.length > 0 ? currentSubmissions : getSubmissions())
+    .sort((a, b) => (b.totalScore - a.totalScore) || (a.totalTime - b.totalTime));
 
   // Course Filter
   if (currentFilterCourse !== 'ALL') {
@@ -258,7 +383,7 @@ function renderLeaderboardTable() {
   if (list.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align:center; padding:2rem; color:var(--text-muted);">
+        <td colspan="10" style="text-align:center; padding:2rem; color:var(--text-muted);">
           No participant submissions match your current filters.
         </td>
       </tr>
@@ -277,19 +402,98 @@ function renderLeaderboardTable() {
         <td>${rankBadge}</td>
         <td><strong>${escapeHTML(r.name)}</strong></td>
         <td>${escapeHTML(r.course)}</td>
-        <td style="color:var(--text-muted); font-size:0.84rem;">${escapeHTML(r.contact || '—')}</td>
+        <td style="color:var(--text-muted); font-size:0.84rem;">${escapeHTML(r.contact || '-')}</td>
         <td>${r.cwScore || 0}</td>
         <td>${r.muScore || 0}</td>
         <td>${r.quizScore || 0}</td>
         <td><strong style="color:var(--primary)">${r.totalScore || 0} pts</strong></td>
         <td style="color:var(--text-muted); font-size:0.84rem;">${r.totalTime || 0}s</td>
+        <td>
+          <button class="btn btn-sm btn-ghost inspect-btn" data-id="${r.id}" title="Inspect submission details" style="padding:0.3rem 0.5rem;">
+            <i data-lucide="eye" style="width:14px;height:14px;"></i>
+          </button>
+          <button class="btn btn-sm btn-ghost delete-btn" data-id="${r.id}" title="Delete this submission" style="padding:0.3rem 0.5rem; color:var(--danger);">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
 
+  // Attach event listeners for inspect and delete buttons
+  tbody.querySelectorAll('.inspect-btn').forEach(btn => {
+    btn.onclick = () => openInspectModal(btn.dataset.id);
+  });
+
+  tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.onclick = () => handleDeleteSubmission(btn.dataset.id);
+  });
+
   if (window.lucide) window.lucide.createIcons();
 }
 
+/* ============ SUBMISSION INSPECTOR MODAL ============ */
+function setupInspectorModal() {
+  const modal = document.getElementById('inspect-modal');
+  const closeBtn = document.getElementById('inspect-modal-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => { if (modal) modal.style.display = 'none'; };
+  }
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    };
+  }
+}
+
+function openInspectModal(id) {
+  const allSubs = currentSubmissions.length > 0 ? currentSubmissions : getSubmissions();
+  const record = allSubs.find(r => String(r.id) === String(id));
+  if (!record) return;
+
+  const modal = document.getElementById('inspect-modal');
+  const body = document.getElementById('inspect-modal-body');
+  if (!modal || !body) return;
+
+  const fields = [
+    ['Submission ID', record.id],
+    ['Timestamp', record.timestamp || 'N/A'],
+    ['Name', record.name],
+    ['Course / Dept', record.course],
+    ['Contact', record.contact || 'Not provided'],
+    ['Crossword Score', `${record.cwScore || 0} pts`],
+    ['Match-Up Score', `${record.muScore || 0} pts`],
+    ['Quiz Score', `${record.quizScore || 0} pts`],
+    ['Total Score', `${record.totalScore || 0} pts`],
+    ['Total Time', `${record.totalTime || 0}s`]
+  ];
+
+  body.innerHTML = `
+    <div style="display:grid; gap:0.75rem;">
+      ${fields.map(([label, value]) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border-subtle);">
+          <span style="color:var(--text-muted); font-weight:600; font-size:0.88rem;">${label}</span>
+          <span style="font-weight:700; color:var(--text-main); font-size:0.92rem;">${escapeHTML(String(value))}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+async function handleDeleteSubmission(id) {
+  if (!confirm('Delete this submission permanently? This action cannot be undone.')) return;
+
+  await deleteCloudSubmission(id);
+
+  // Refresh the display
+  const list = getSubmissions();
+  currentSubmissions = list;
+  renderAllAdminData(list);
+}
+
+/* ============ QR CODE ============ */
 export function updateAdminQRCode() {
   const qrInput = document.getElementById('admin-qr-url');
   const qrImg = document.getElementById('admin-qr-img');
@@ -300,8 +504,11 @@ export function updateAdminQRCode() {
   qrImg.src = qrApi;
 }
 
+/* ============ CSV EXPORT ============ */
 export function exportLeaderboardCSV() {
-  const list = getSubmissions().sort((a, b) => (b.totalScore - a.totalScore) || (a.totalTime - b.totalTime));
+  const list = (currentSubmissions.length > 0 ? currentSubmissions : getSubmissions())
+    .sort((a, b) => (b.totalScore - a.totalScore) || (a.totalTime - b.totalTime));
+
   if (list.length === 0) {
     alert('No participant submissions to export.');
     return;
@@ -329,10 +536,12 @@ export function exportLeaderboardCSV() {
   link.click();
 }
 
+/* ============ DATA MANAGEMENT ============ */
 function handleClearData() {
   if (confirm('Are you sure you want to delete all stored submissions from this device? This action cannot be undone.')) {
     clearSubmissions();
-    renderAllAdminData();
+    currentSubmissions = [];
+    renderAllAdminData([]);
   }
 }
 
@@ -362,8 +571,9 @@ async function handleSaveWebhook() {
         totalScore: Number(r[7]) || 0,
         totalTime: Number(r[8]) || 0
       }));
-      localStorage.setItem('mhw_submissions_2026', JSON.stringify(imported));
-      renderAllAdminData();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+      currentSubmissions = imported;
+      renderAllAdminData(imported);
       alert(`Connected and imported ${imported.length} submissions from Google Sheets!`);
     } else {
       alert('Webhook saved! New submissions will automatically push to your Google Sheet.');

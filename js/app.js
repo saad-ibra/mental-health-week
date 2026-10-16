@@ -18,10 +18,15 @@ import { initCrossword, openCrossword, evaluateCrossword } from './crossword.js'
 import { initMatchUp, openMatchUp } from './matchup.js';
 import { initQuiz, openQuiz } from './quiz.js';
 import { SUPPORT_RESOURCES } from './data.js';
+import { saveCloudSubmission, initCloudDB } from './db.js';
+import { downloadCertificate } from './certificate.js';
 
 export function initApp() {
   initTheme();
   setupEventListeners();
+
+  // Initialize Cloud Database Adapter
+  initCloudDB();
 
   // Initialize Game Engines
   initCrossword(() => showView('view-hub'));
@@ -157,6 +162,20 @@ function setupEventListeners() {
   const newSessionBtn = document.getElementById('btn-new-participant');
   if (newSessionBtn) newSessionBtn.onclick = resetForNextParticipant;
 
+  // Certificate Download Button
+  const certBtn = document.getElementById('btn-download-certificate');
+  if (certBtn) {
+    certBtn.onclick = () => {
+      const sub = window._lastSubmission;
+      if (sub) {
+        downloadCertificate(sub);
+        showToast('Certificate downloaded!', 'success');
+      } else {
+        showToast('Complete activities first to generate a certificate.', 'error');
+      }
+    };
+  }
+
   // Theme Toggle Button
   const themeBtn = document.getElementById('theme-toggle-btn');
   if (themeBtn) themeBtn.onclick = toggleTheme;
@@ -188,10 +207,24 @@ async function handleFinalSubmission() {
     totalTime: totalTime
   };
 
+  // Save to local storage
   saveSubmission(record);
 
-  // Sync to Google Sheets if configured
+  // Save to cloud database (Firebase + Google Sheets)
+  try {
+    const cloudResult = await saveCloudSubmission(record);
+    if (cloudResult.cloudSaved) {
+      console.log('Submission synced to cloud database.');
+    }
+  } catch (err) {
+    console.warn('Cloud save failed, data is stored locally:', err);
+  }
+
+  // Sync to Google Sheets if configured (legacy webhook path)
   syncWithWebhook(record);
+
+  // Store last submission for certificate download
+  window._lastSubmission = { name: user.name, course: user.course, totalScore };
 
   // Populate Thank You View
   const tyName = document.getElementById('ty-participant-name');
@@ -210,7 +243,7 @@ async function handleFinalSubmission() {
 
   if (tyBreakdown) {
     tyBreakdown.textContent = activities.length > 0
-      ? activities.join(' • ')
+      ? activities.join(' \u2022 ')
       : 'Activities recorded.';
   }
 

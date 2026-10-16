@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Live Leaderboard — Mental Health Week</title>
+  <meta name="description" content="Real-time projector-optimized leaderboard for Mental Health Week activities.">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/games.css">
+
+  <!-- Lucide Icons Library -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase Cloud SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* Leaderboard-specific projector styles */
+    body {
+      background: var(--bg-main);
+      min-height: 100vh;
+    }
+
+    .lb-header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+      position: relative;
+    }
+
+    .lb-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+
+    .lb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+      animation: pulse-badge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .lb-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0 0 0.25rem;
+    }
+
+    .lb-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .lb-stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1.5rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    .lb-stat {
+      text-align: center;
+    }
+
+    .lb-stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .lb-stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Podium section */
+    .lb-podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 1.5rem;
+      padding: 1rem 1rem 2rem;
+      flex-wrap: wrap;
+    }
+
+    .lb-podium-card {
+      text-align: center;
+      padding: 1.5rem 1.25rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-card);
+      min-width: 200px;
+      max-width: 260px;
+      flex: 1;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .lb-podium-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .lb-podium-card.rank-1 {
+      border-color: rgba(234, 179, 8, 0.4);
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.08), var(--surface-card));
+      order: 2;
+      transform: scale(1.08);
+    }
+
+    .lb-podium-card.rank-1:hover {
+      transform: scale(1.08) translateY(-4px);
+    }
+
+    .lb-podium-card.rank-2 {
+      border-color: rgba(148, 163, 184, 0.3);
+      order: 1;
+    }
+
+    .lb-podium-card.rank-3 {
+      border-color: rgba(180, 83, 9, 0.3);
+      order: 3;
+    }
+
+    .lb-podium-rank {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+
+    .lb-podium-card.rank-1 .lb-podium-rank {
+      background: linear-gradient(135deg, #eab308, #f59e0b);
+      color: #1a1a1a;
+    }
+
+    .lb-podium-card.rank-2 .lb-podium-rank {
+      background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+      color: #1a1a1a;
+    }
+
+    .lb-podium-card.rank-3 .lb-podium-rank {
+      background: linear-gradient(135deg, #b45309, #d97706);
+      color: #fff;
+    }
+
+    .lb-podium-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.15rem;
+    }
+
+    .lb-podium-course {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .lb-podium-score {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .lb-podium-breakdown {
+      font-size: 0.78rem;
+      color: var(--text-subtle);
+      margin-top: 0.25rem;
+    }
+
+    /* Remaining table */
+    .lb-table-wrap {
+      max-width: 900px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+    }
+
+    .lb-table-wrap .data-table {
+      width: 100%;
+    }
+
+    .lb-table-wrap .data-table td,
+    .lb-table-wrap .data-table th {
+      font-size: 0.95rem;
+      padding: 0.85rem 1rem;
+    }
+
+    /* Refresh indicator */
+    .lb-refresh {
+      text-align: center;
+      color: var(--text-subtle);
+      font-size: 0.82rem;
+      padding: 0.5rem 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .lb-empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .lb-empty-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      opacity: 0.3;
+    }
+
+    /* Auto-scroll animation for large lists */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .lb-podium-card, .lb-table-wrap tr {
+      animation: fadeInUp 0.4s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lb-header">
+    <div class="lb-badge">
+      <i data-lucide="radio" style="width:16px; height:16px;"></i>
+      <span>Live Leaderboard</span>
+    </div>
+    <h1 class="lb-title">Mind Matters Hub</h1>
+    <p class="lb-subtitle">Mental Health Week 2026 — Campus Leaderboard</p>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="lb-stats-row" id="lb-stats-row">
+    <div class="lb-stat">
+      <div class="lb-stat-value" id="lb-total-participants">0</div>
+      <div class="lb-stat-label">Participants</div>
+    </div>
+    <div class="lb-stat">
+      <div class="lb-stat-value" id="lb-avg-score">0</div>
+      <div class="lb-stat-label">Average Score</div>
+    </div>
+    <div class="lb-stat">
+      <div class="lb-stat-value" id="lb-top-score">0</div>
+      <div class="lb-stat-label">Highest Score</div>
+    </div>
+  </div>
+
+  <!-- Podium (Top 3) -->
+  <div class="lb-podium" id="lb-podium"></div>
+
+  <!-- Remaining Rankings -->
+  <div class="lb-table-wrap">
+    <table class="data-table" id="lb-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Participant</th>
+          <th>Course</th>
+          <th>Crossword</th>
+          <th>Match-Up</th>
+          <th>Quiz</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="lb-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Empty state -->
+  <div class="lb-empty" id="lb-empty">
+    <div class="lb-empty-icon">
+      <i data-lucide="users" style="width:64px; height:64px;"></i>
+    </div>
+    <h3 style="font-size:1.25rem; margin-bottom:0.5rem;">Waiting for Participants</h3>
+    <p>Scores will appear here as participants complete activities.</p>
+  </div>
+
+  <!-- Refresh Info -->
+  <div class="lb-refresh" id="lb-refresh-info">
+    <i data-lucide="refresh-cw" style="width:14px; height:14px;"></i>
+    <span id="lb-sync-text">Auto-refreshes every <strong>10</strong> seconds</span>
+    <span id="lb-last-update" style="margin-left:0.5rem;"></span>
+  </div>
+
+  <script type="module">
+    import { getSubmissions, STORAGE_KEY } from './js/state.js';
+    import { initCloudDB, subscribeToSubmissions } from './js/db.js';
+
+    const REFRESH_INTERVAL = 10000;
+    let latestList = [];
+
+    function renderLeaderboard(data) {
+      const list = (data && Array.isArray(data) ? data : getSubmissions())
+        .sort((a, b) => (b.totalScore - a.totalScore) || (a.totalTime - b.totalTime));
+      
+      latestList = list;
+
+      const emptyEl = document.getElementById('lb-empty');
+      const podiumEl = document.getElementById('lb-podium');
+      const tableEl = document.getElementById('lb-table');
+      const tableBody = document.getElementById('lb-table-body');
+
+      // Stats
+      const count = list.length;
+      document.getElementById('lb-total-participants').textContent = count;
+
+      if (count === 0) {
+        document.getElementById('lb-avg-score').textContent = '0';
+        document.getElementById('lb-top-score').textContent = '0';
+        emptyEl.style.display = 'block';
+        podiumEl.innerHTML = '';
+        tableEl.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      const totalSum = list.reduce((a, r) => a + (Number(r.totalScore) || 0), 0);
+      document.getElementById('lb-avg-score').textContent = Math.round(totalSum / count);
+      document.getElementById('lb-top-score').textContent = Math.max(...list.map(r => Number(r.totalScore) || 0));
+
+      // Podium (top 3)
+      const top3 = list.slice(0, 3);
+      podiumEl.innerHTML = top3.map((r, i) => `
+        <div class="lb-podium-card rank-${i + 1}">
+          <div class="lb-podium-rank">${i + 1}</div>
+          <div class="lb-podium-name">${escapeHTML(r.name)}</div>
+          <div class="lb-podium-course">${escapeHTML(r.course)}</div>
+          <div class="lb-podium-score">${r.totalScore || 0} pts</div>
+          <div class="lb-podium-breakdown">
+            CW: ${r.cwScore || 0} | MU: ${r.muScore || 0} | Quiz: ${r.quizScore || 0}
+          </div>
+        </div>
+      `).join('');
+
+      // Remaining table
+      const remaining = list.slice(3);
+      if (remaining.length > 0) {
+        tableEl.style.display = 'table';
+        tableBody.innerHTML = remaining.map((r, i) => `
+          <tr>
+            <td><span class="rank-badge">${i + 4}</span></td>
+            <td><strong>${escapeHTML(r.name)}</strong></td>
+            <td>${escapeHTML(r.course)}</td>
+            <td>${r.cwScore || 0}</td>
+            <td>${r.muScore || 0}</td>
+            <td>${r.quizScore || 0}</td>
+            <td><strong style="color:var(--primary);">${r.totalScore || 0} pts</strong></td>
+          </tr>
+        `).join('');
+      } else {
+        tableEl.style.display = 'none';
+      }
+
+      // Last update timestamp
+      const updateEl = document.getElementById('lb-last-update');
+      if (updateEl) {
+        updateEl.textContent = '| Updated: ' + new Date().toLocaleTimeString();
+      }
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    // Initial render and Cloud DB subscription
+    document.addEventListener('DOMContentLoaded', () => {
+      initCloudDB();
+      renderLeaderboard();
+
+      subscribeToSubmissions((cloudList, source) => {
+        renderLeaderboard(cloudList);
+        const syncText = document.getElementById('lb-sync-text');
+        if (syncText) {
+          if (source === 'firebase') {
+            syncText.innerHTML = '<span style="color:var(--success); font-weight:700;">Live Realtime Stream Active</span>';
+          } else {
+            syncText.innerHTML = 'Auto-refreshes every <strong>10</strong> seconds';
+          }
+        }
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    // Auto-refresh interval fallback
+    setInterval(() => renderLeaderboard(latestList), REFRESH_INTERVAL);
+
+    // Cross-tab sync
+    window.addEventListener('storage', e => {
+      if (e.key === STORAGE_KEY) renderLeaderboard();
+    });
+  </script>
+</body>
+</html>
